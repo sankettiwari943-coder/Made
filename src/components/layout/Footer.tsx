@@ -51,17 +51,7 @@ export const Footer: React.FC = () => {
             <ul className={styles.linkList}>
               <li>
                 <a
-                  href={siteConfig.founder.socials.github}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={styles.footerLink}
-                >
-                  GitHub ↗
-                </a>
-              </li>
-              <li>
-                <a
-                  href={siteConfig.founder.socials.linkedin}
+                  href={siteConfig.socials.linkedin}
                   target="_blank"
                   rel="noopener noreferrer"
                   className={styles.footerLink}

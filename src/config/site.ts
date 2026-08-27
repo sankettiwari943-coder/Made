@@ -52,6 +52,9 @@ export interface SiteConfig {
   description: string;
   url: string;
   ogImage: string;
+  socials: {
+    linkedin: string;
+  };
   founder: FounderConfig;
   navItems: NavItem[];
   authNavItems: {
@@ -96,6 +99,9 @@ export const siteConfig: SiteConfig = {
     "MADE is a student-powered innovation platform for people who want to learn, collaborate, build projects, find opportunities, and turn ideas into something real.",
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   ogImage: "/brand/og-image.png",
+  socials: {
+    linkedin: "https://www.linkedin.com/company/made-community",
+  },
 
   founder: {
     name: "Sanket Tiwari",
