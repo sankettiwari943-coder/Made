@@ -1,0 +1,123 @@
+/* ==============================================================================
+   MADE DESIGN SYSTEM — DIRECTION B: THE BLUEPRINT LABORATORY
+   Design Tokens & CSS Variables
+   ============================================================================== */
+
+:root {
+  /* Dark Theme (Default) */
+  --bg-canvas: #0c0c0e;
+  --bg-surface: #151518;
+  --bg-surface-elevated: #1a1a1f;
+  --bg-surface-active: #222228;
+  --bg-input: #111114;
+
+  /* Borders & Dividers */
+  --border-subtle: #232328;
+  --border-regular: rgba(255, 255, 255, 0.14);
+  --border-strong: rgba(255, 255, 255, 0.28);
+  --border-technical: #232328;
+
+  /* Typography Colors */
+  --text-primary: #f2f2f5;
+  --text-secondary: #a4a4b2;
+  --text-muted: #848490;
+  --text-dim: #52525e;
+  --text-inverse: #0c0c0e;
+
+  /* Accent: Precision Cobalt */
+  --accent-primary: #1e5aff;
+  --accent-primary-hover: #3b72ff;
+  --accent-primary-active: #1545cc;
+  --accent-subtle: rgba(30, 90, 255, 0.12);
+  --accent-border: rgba(30, 90, 255, 0.35);
+
+  /* Status Tokens */
+  --status-idea: #eab308;
+  --status-idea-bg: rgba(234, 179, 8, 0.1);
+  --status-building: #1e5aff;
+  --status-building-bg: rgba(30, 90, 255, 0.1);
+  --status-prototype: #a855f7;
+  --status-prototype-bg: rgba(168, 85, 247, 0.1);
+  --status-live: #10b981;
+  --status-live-bg: rgba(16, 185, 129, 0.1);
+  --status-opensource: #06b6d4;
+  --status-opensource-bg: rgba(6, 182, 212, 0.1);
+
+  /* Semantic Feedback */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-info: #3b82f6;
+
+  /* Typography Stacks */
+  --font-display: 'Space Grotesk', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-serif: 'Instrument Serif', Georgia, serif;
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'Space Mono', 'Geist Mono', 'JetBrains Mono', Consolas, monospace;
+
+  /* Spacing Scale */
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-10: 40px;
+  --space-12: 48px;
+  --space-16: 64px;
+  --space-20: 80px;
+  --space-24: 96px;
+  --space-32: 128px;
+
+  /* Border Radii (Technical Discipline: 0px – 3px) */
+  --radius-none: 0px;
+  --radius-xs: 2px;
+  --radius-sm: 3px;
+  --radius-md: 4px;
+  --radius-pill: 9999px;
+
+  /* Layout Widths */
+  --max-width-site: 1360px;
+  --max-width-prose: 760px;
+  --max-width-narrow: 980px;
+
+  /* Transitions */
+  --transition-fast: 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-normal: 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  --transition-slow: 350ms cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shadows (Minimal, crisp) */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Light Theme Variables */
+[data-theme='light'] {
+  --bg-canvas: #fafafa;
+  --bg-surface: #f0f0f2;
+  --bg-surface-elevated: #e6e6ea;
+  --bg-surface-active: #dcdce2;
+  --bg-input: #ffffff;
+
+  --border-subtle: #e0e0e4;
+  --border-regular: #ccccd2;
+  --border-strong: #9999a6;
+  --border-technical: #e0e0e4;
+
+  --text-primary: #0c0c0e;
+  --text-secondary: #40404a;
+  --text-muted: #60606a;
+  --text-dim: #90909c;
+  --text-inverse: #f2f2f5;
+
+  --accent-primary: #1e5aff;
+  --accent-primary-hover: #1545cc;
+  --accent-primary-active: #0f34a0;
+  --accent-subtle: rgba(30, 90, 255, 0.08);
+  --accent-border: rgba(30, 90, 255, 0.25);
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.06);
+}

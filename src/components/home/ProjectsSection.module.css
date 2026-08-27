@@ -1,0 +1,126 @@
+.projectsWrapper {
+  padding: var(--space-20) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 768px) {
+  .projectsWrapper {
+    padding: var(--space-24) 0;
+  }
+}
+
+.projectList {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-subtle);
+}
+
+.projectRow {
+  display: grid;
+  grid-template-columns: 1fr;
+  padding: var(--space-10) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  gap: var(--space-6);
+  transition: background-color var(--transition-normal);
+  text-decoration: none;
+  color: inherit;
+}
+
+@media (min-width: 992px) {
+  .projectRow {
+    grid-template-columns: 80px 1.4fr 1.6fr auto;
+    align-items: center;
+    gap: var(--space-8);
+  }
+}
+
+.projectRow:hover {
+  background-color: var(--bg-surface);
+}
+
+.projectIndex {
+  font-family: var(--font-mono);
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  letter-spacing: -0.02em;
+}
+
+.projectIdentity {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.projectNameRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.projectName {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 1;
+}
+
+.projectCategory {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
+  text-transform: uppercase;
+}
+
+.projectContent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.projectTagline {
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  color: var(--text-secondary);
+}
+
+.techStack {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.techChip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  padding: 2px 8px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-technical);
+  border-radius: var(--radius-xs);
+  color: var(--text-muted);
+}
+
+.projectAction {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  transition: color var(--transition-fast), transform var(--transition-fast);
+  white-space: nowrap;
+}
+
+.projectRow:hover .projectAction {
+  color: var(--accent-primary-hover);
+  transform: translateX(4px);
+}

@@ -1,0 +1,114 @@
+/* ==============================================================================
+   EDITORIAL & ASYMMETRIC GRID SYSTEM
+   ============================================================================== */
+
+.container {
+  width: 100%;
+  max-width: var(--max-width-site);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding-left: var(--space-8);
+    padding-right: var(--space-8);
+  }
+}
+
+@media (min-width: 1200px) {
+  .container {
+    padding-left: var(--space-12);
+    padding-right: var(--space-12);
+  }
+}
+
+.container-narrow {
+  width: 100%;
+  max-width: var(--max-width-narrow);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+.container-prose {
+  width: 100%;
+  max-width: var(--max-width-prose);
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--space-4);
+  padding-right: var(--space-4);
+}
+
+/* Editorial Split Grids */
+.grid-asymmetric-hero {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+}
+
+@media (min-width: 992px) {
+  .grid-asymmetric-hero {
+    grid-template-columns: 1.4fr 1fr;
+    gap: var(--space-12);
+    align-items: end;
+  }
+}
+
+.grid-3-editorial {
+  display: grid;
+  grid-template-columns: 1fr;
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 768px) {
+  .grid-3-editorial {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.editorial-process-col {
+  padding: var(--space-8) var(--space-6);
+  border-bottom: 1px solid var(--border-subtle);
+  position: relative;
+  transition: background-color var(--transition-normal);
+}
+
+@media (min-width: 768px) {
+  .editorial-process-col {
+    border-bottom: none;
+    border-right: 1px solid var(--border-subtle);
+  }
+  .editorial-process-col:last-child {
+    border-right: none;
+  }
+}
+
+.editorial-process-col:hover {
+  background-color: var(--bg-surface);
+}
+
+/* Linear Directory Rows (Editorial List Format) */
+.editorial-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-4);
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--border-subtle);
+  align-items: center;
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+@media (min-width: 768px) {
+  .editorial-row {
+    grid-template-columns: auto 1fr auto;
+    gap: var(--space-8);
+  }
+}
+
+.editorial-row:hover {
+  border-bottom-color: var(--border-regular);
+}

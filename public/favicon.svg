@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="12" fill="#09090B"/>
+  <!-- Material Subtraction "A" Mark -->
+  <path d="M32 10L14 54H24L27.5 44H36.5L40 54H50L32 10ZM32 24.5L34.8 35.5H29.2L32 24.5Z" fill="#F4F4F7"/>
+  <!-- Subtraction Stencil Slash -->
+  <line x1="22" y1="44" x2="42" y2="44" stroke="#09090B" stroke-width="4"/>
+  <rect x="29" y="8" width="6" height="4" fill="#1E5AFF"/>
+</svg>

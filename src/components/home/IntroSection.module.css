@@ -1,0 +1,89 @@
+.introWrapper {
+  padding: var(--space-20) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 768px) {
+  .introWrapper {
+    padding: var(--space-28) 0;
+  }
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-8);
+}
+
+.manifestoBlock {
+  margin-bottom: var(--space-12);
+}
+
+.statement {
+  font-family: var(--font-serif);
+  font-size: clamp(2.25rem, 5.5vw, 4.25rem);
+  font-weight: 400;
+  line-height: 1.12;
+  letter-spacing: -0.02em;
+  color: var(--text-primary);
+  max-width: 1080px;
+}
+
+.statement em {
+  font-style: italic;
+  color: var(--accent-primary-hover);
+}
+
+.credoRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-6);
+  margin-top: var(--space-8);
+}
+
+.credoItem {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 2.5vw, 1.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.credoDot {
+  width: 6px;
+  height: 6px;
+  background-color: var(--accent-primary);
+  border-radius: var(--radius-full);
+}
+
+.narrativeGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+  padding-top: var(--space-10);
+  border-top: 1px solid var(--border-subtle);
+}
+
+@media (min-width: 768px) {
+  .narrativeGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-16);
+  }
+}
+
+.bodyText {
+  font-size: 1.0625rem;
+  line-height: 1.75;
+  color: var(--text-secondary);
+}
+
+.bodyText strong {
+  color: var(--text-primary);
+  font-weight: 600;
+}

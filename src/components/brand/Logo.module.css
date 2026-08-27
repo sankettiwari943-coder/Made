@@ -1,0 +1,28 @@
+.logoWrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  text-decoration: none;
+  line-height: 1;
+}
+
+.imageLogo {
+  height: auto;
+  object-fit: contain;
+  display: block;
+}
+
+.svgWordmark {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+.markSymbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-xs);
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-technical);
+}
