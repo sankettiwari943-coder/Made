@@ -69,7 +69,7 @@ export function CareerRoleEditForm({ initialRole }: { initialRole: CareerRole })
     setIsSubmitting(true);
 
     try {
-      await saveCareerRoleAction({
+      const res = await saveCareerRoleAction({
         id: initialRole.id,
         title,
         slug,
@@ -88,6 +88,21 @@ export function CareerRoleEditForm({ initialRole }: { initialRole: CareerRole })
         is_published: publishState,
       });
 
+      if (!res.success) {
+        if (res.fieldErrors) {
+          const mappedErrors: Record<string, string> = {};
+          for (const [key, msgs] of Object.entries(res.fieldErrors)) {
+            if (msgs && msgs[0]) {
+              mappedErrors[key] = msgs[0];
+            }
+          }
+          setErrors(mappedErrors);
+        }
+        setGeneralError(res.error || 'Failed to update career role');
+        setIsSubmitting(false);
+        return;
+      }
+
       setIsPublished(publishState);
       router.push('/admin/careers');
     } catch (err: any) {
@@ -99,7 +114,13 @@ export function CareerRoleEditForm({ initialRole }: { initialRole: CareerRole })
   const handleDelete = async () => {
     setIsDeleting(true);
     try {
-      await deleteCareerRoleAction(initialRole.id, initialRole.title);
+      const res = await deleteCareerRoleAction(initialRole.id, initialRole.title);
+      if (!res.success) {
+        setGeneralError(res.error || 'Failed to delete role');
+        setIsDeleting(false);
+        setShowDeleteConfirm(false);
+        return;
+      }
       router.push('/admin/careers');
     } catch (err: any) {
       setGeneralError(err.message || 'Failed to delete role');

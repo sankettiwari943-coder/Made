@@ -4,11 +4,18 @@ import { revalidatePath } from 'next/cache';
 import { createClient, createServiceClient } from '../supabase/server';
 import { requireSuperAdmin } from '../auth/authorization';
 import { recordAdminAuditLog } from './audit';
-import { ApplicationStatus, CareerRoleStatus, OpportunityStatus, UserRole } from '../supabase/types';
+import { ApplicationStatus, CareerRoleStatus, OpportunityStatus, RoleDepartment, UserRole } from '../supabase/types';
+import { CareerRoleSchema } from '../careers/validations';
 
+export interface SaveRoleResult {
+  success: boolean;
+  slug?: string;
+  error?: string;
+  fieldErrors?: Record<string, string[]>;
+}
 
 /**
- * Super Admin: Create or update a career role
+ * Super Admin: Create or update a career role with safe error boundaries
  */
 export async function saveCareerRoleAction(formData: {
   id?: string;
@@ -27,90 +34,189 @@ export async function saveCareerRoleAction(formData: {
   deadline?: string | null;
   status: CareerRoleStatus;
   is_published: boolean;
-}) {
-  const admin = await requireSuperAdmin();
-  const supabase = createClient();
+}): Promise<SaveRoleResult> {
+  try {
+    // 1. Authorization check
+    let admin;
+    try {
+      admin = await requireSuperAdmin();
+    } catch (authErr: any) {
+      return {
+        success: false,
+        error: authErr.message || 'Unauthorized: SUPER_ADMIN role clearance required.',
+      };
+    }
 
-  const payload = {
-    title: formData.title.trim(),
-    slug: formData.slug.trim().toLowerCase(),
-    department: formData.department,
-    short_description: formData.short_description.trim(),
-    description: formData.description.trim(),
-    responsibilities: formData.responsibilities.trim(),
-    requirements: formData.requirements.trim(),
-    nice_to_have: formData.nice_to_have?.trim() || null,
-    benefits: formData.benefits.trim(),
-    location: formData.location?.trim() || null,
-    is_remote: formData.is_remote,
-    commitment: formData.commitment.trim(),
-    deadline: formData.deadline ? new Date(formData.deadline).toISOString() : null,
-    status: formData.status,
-    is_published: formData.is_published,
-    created_by: admin.id,
-    updated_at: new Date().toISOString(),
-  };
+    // 2. Validate input schema with Zod
+    const validationResult = CareerRoleSchema.safeParse({
+      title: formData.title,
+      department: formData.department,
+      short_description: formData.short_description,
+      description: formData.description,
+      responsibilities: formData.responsibilities,
+      requirements: formData.requirements,
+      nice_to_have: formData.nice_to_have || '',
+      benefits: formData.benefits,
+      location: formData.location || '',
+      is_remote: formData.is_remote,
+      commitment: formData.commitment,
+      deadline: formData.deadline || '',
+      status: formData.status,
+      is_published: formData.is_published,
+    });
 
-  if (formData.id) {
-    const { error } = await supabase
-      .from('career_roles')
-      .update(payload)
-      .eq('id', formData.id);
+    if (!validationResult.success) {
+      const fieldErrors = validationResult.error.flatten().fieldErrors;
+      const firstError = Object.values(fieldErrors)[0]?.[0] || 'Invalid input data';
+      return {
+        success: false,
+        error: firstError,
+        fieldErrors,
+      };
+    }
 
-    if (error) throw new Error(error.message);
+    // 3. Safe date conversion
+    let formattedDeadline: string | null = null;
+    if (formData.deadline && formData.deadline.trim()) {
+      const parsedDate = new Date(formData.deadline);
+      if (isNaN(parsedDate.getTime())) {
+        return {
+          success: false,
+          error: 'Application deadline must be a valid date.',
+        };
+      }
+      formattedDeadline = parsedDate.toISOString();
+    }
 
-    await recordAdminAuditLog(
-      admin.id,
-      formData.is_published ? 'CAREER_PUBLISHED' : 'CAREER_UPDATED',
-      'CAREER',
-      formData.id,
-      { title: payload.title, slug: payload.slug, status: payload.status }
-    );
-  } else {
-    const { data, error } = await supabase
-      .from('career_roles')
-      .insert({ ...payload, created_at: new Date().toISOString() })
-      .select('id')
-      .single();
+    // 4. Build database payload
+    const payload = {
+      title: formData.title.trim(),
+      slug: formData.slug.trim().toLowerCase(),
+      department: formData.department as RoleDepartment,
+      short_description: formData.short_description.trim(),
+      description: formData.description.trim(),
+      responsibilities: formData.responsibilities.trim(),
+      requirements: formData.requirements.trim(),
+      nice_to_have: formData.nice_to_have?.trim() || null,
+      benefits: formData.benefits.trim(),
+      location: formData.location?.trim() || null,
+      is_remote: formData.is_remote,
+      commitment: formData.commitment.trim() || 'Part-Time / 10-15 hrs/week',
+      deadline: formattedDeadline,
+      status: formData.status,
+      is_published: formData.is_published,
+      created_by: admin.id,
+      updated_at: new Date().toISOString(),
+    };
 
-    if (error) throw new Error(error.message);
+    const supabase = createClient();
 
-    await recordAdminAuditLog(
-      admin.id,
-      'CAREER_CREATED',
-      'CAREER',
-      data.id,
-      { title: payload.title, slug: payload.slug }
-    );
+    // 5. Insert or Update
+    if (formData.id) {
+      const { error } = await supabase
+        .from('career_roles')
+        .update(payload)
+        .eq('id', formData.id);
+
+      if (error) {
+        return { success: false, error: `Database Error: ${error.message}` };
+      }
+
+      try {
+        await recordAdminAuditLog(
+          admin.id,
+          formData.is_published ? 'CAREER_PUBLISHED' : 'CAREER_UPDATED',
+          'CAREER',
+          formData.id,
+          { title: payload.title, slug: payload.slug, status: payload.status }
+        );
+      } catch (auditErr) {
+        console.error('Failed to log admin audit:', auditErr);
+      }
+    } else {
+      const { data, error } = await supabase
+        .from('career_roles')
+        .insert({ ...payload, created_at: new Date().toISOString() })
+        .select('id')
+        .single();
+
+      if (error) {
+        if (error.code === '23505') {
+          return { success: false, error: 'A role with this URL slug already exists. Please choose a different slug.' };
+        }
+        return { success: false, error: `Database Error: ${error.message}` };
+      }
+
+      try {
+        await recordAdminAuditLog(
+          admin.id,
+          'CAREER_CREATED',
+          'CAREER',
+          data.id,
+          { title: payload.title, slug: payload.slug }
+        );
+      } catch (auditErr) {
+        console.error('Failed to log admin audit:', auditErr);
+      }
+    }
+
+    // 6. Cache revalidation
+    revalidatePath('/careers');
+    revalidatePath(`/careers/${payload.slug}`);
+    revalidatePath('/admin/careers');
+    revalidatePath('/admin');
+
+    return { success: true, slug: payload.slug };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'An unexpected error occurred while saving the career role.',
+    };
   }
-
-  revalidatePath('/careers');
-  revalidatePath(`/careers/${payload.slug}`);
-  revalidatePath('/admin/careers');
-  revalidatePath('/admin');
-  return { success: true, slug: payload.slug };
 }
 
 /**
  * Super Admin: Delete / Archive a career role
  */
-export async function deleteCareerRoleAction(roleId: string, roleTitle: string) {
-  const admin = await requireSuperAdmin();
-  const supabase = createClient();
+export async function deleteCareerRoleAction(roleId: string, roleTitle: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    let admin;
+    try {
+      admin = await requireSuperAdmin();
+    } catch (authErr: any) {
+      return {
+        success: false,
+        error: authErr.message || 'Unauthorized: SUPER_ADMIN role clearance required.',
+      };
+    }
 
-  const { error } = await supabase
-    .from('career_roles')
-    .delete()
-    .eq('id', roleId);
+    const supabase = createClient();
 
-  if (error) throw new Error(error.message);
+    const { error } = await supabase
+      .from('career_roles')
+      .delete()
+      .eq('id', roleId);
 
-  await recordAdminAuditLog(admin.id, 'CAREER_DELETED', 'CAREER', roleId, { title: roleTitle });
+    if (error) {
+      return { success: false, error: `Database Error: ${error.message}` };
+    }
 
-  revalidatePath('/careers');
-  revalidatePath('/admin/careers');
-  revalidatePath('/admin');
-  return { success: true };
+    try {
+      await recordAdminAuditLog(admin.id, 'CAREER_DELETED', 'CAREER', roleId, { title: roleTitle });
+    } catch (auditErr) {
+      console.error('Failed to log admin audit:', auditErr);
+    }
+
+    revalidatePath('/careers');
+    revalidatePath('/admin/careers');
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err: any) {
+    return {
+      success: false,
+      error: err.message || 'An unexpected error occurred while deleting the career role.',
+    };
+  }
 }
 
 /**

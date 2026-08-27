@@ -81,7 +81,7 @@ export default function CreateCareerRolePage() {
     setIsSubmitting(true);
 
     try {
-      await saveCareerRoleAction({
+      const res = await saveCareerRoleAction({
         title,
         slug,
         department,
@@ -98,6 +98,21 @@ export default function CreateCareerRolePage() {
         status,
         is_published: publishState,
       });
+
+      if (!res.success) {
+        if (res.fieldErrors) {
+          const mappedErrors: Record<string, string> = {};
+          for (const [key, msgs] of Object.entries(res.fieldErrors)) {
+            if (msgs && msgs[0]) {
+              mappedErrors[key] = msgs[0];
+            }
+          }
+          setErrors(mappedErrors);
+        }
+        setGeneralError(res.error || 'Failed to save career role');
+        setIsSubmitting(false);
+        return;
+      }
 
       router.push('/admin/careers');
     } catch (err: any) {
