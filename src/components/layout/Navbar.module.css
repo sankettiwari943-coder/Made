@@ -15,7 +15,13 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 68px;
+  height: 64px;
+}
+
+@media (min-width: 960px) {
+  .inner {
+    height: 68px;
+  }
 }
 
 .leftGroup {
@@ -433,31 +439,52 @@
 /* Mobile Drawer Overlay */
 .mobileDrawer {
   position: fixed;
-  top: 69px;
+  top: 4rem; /* top-16 */
   left: 0;
   right: 0;
-  bottom: 0;
-  background-color: var(--bg-canvas);
+  height: calc(100vh - 4rem);
+  height: calc(100dvh - 4rem);
+  background-color: rgba(0, 0, 0, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-regular);
-  padding: var(--space-8) var(--space-6);
+  padding: 1.5rem; /* p-6 */
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  z-index: 99;
+  z-index: 50;
   overflow-y: auto;
+  animation: mobileDrawerFadeIn 180ms ease-out;
+}
+
+@media (min-width: 960px) {
+  .mobileDrawer {
+    display: none;
+  }
+}
+
+@keyframes mobileDrawerFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .mobileNavLinks {
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 
 .mobileNavLink {
   font-family: var(--font-display);
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-size: 1.25rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
   color: var(--text-primary);
   padding: var(--space-3) 0;
   border-bottom: 1px solid var(--border-subtle);
@@ -465,6 +492,7 @@
   align-items: center;
   justify-content: space-between;
   text-decoration: none;
+  transition: color var(--transition-fast);
 }
 
 .mobileNavLink:hover,
@@ -482,8 +510,8 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  margin-top: var(--space-8);
-  padding-top: var(--space-6);
+  margin-top: var(--space-6);
+  padding-top: var(--space-5);
   border-top: 1px solid var(--border-technical);
 }
 
@@ -491,6 +519,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
+  width: 100%;
+}
+
+.mobileCtaBtn {
+  width: 100%;
+  justify-content: center;
 }
 
 .mobileUserCard {
@@ -553,3 +587,4 @@
 .mobileAdminSubLink {
   color: var(--accent-primary-hover);
 }
+

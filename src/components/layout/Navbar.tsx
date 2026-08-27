@@ -471,6 +471,7 @@ export const Navbar: React.FC = () => {
                   variant="secondary"
                   size="md"
                   onClick={closeMobile}
+                  className={styles.mobileCtaBtn}
                 >
                   {siteConfig.authNavItems.signIn.label}
                 </Button>
@@ -480,6 +481,7 @@ export const Navbar: React.FC = () => {
                   size="md"
                   showArrow
                   onClick={closeMobile}
+                  className={styles.mobileCtaBtn}
                 >
                   {siteConfig.authNavItems.joinMade.label}
                 </Button>
