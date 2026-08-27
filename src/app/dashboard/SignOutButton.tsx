@@ -1,23 +1,19 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@/lib/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/Button';
 
 export const SignOutButton: React.FC = () => {
-  const router = useRouter();
+  const { signOut } = useAuth();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   const handleSignOut = async () => {
     setIsLoggingOut(true);
-    const supabase = createClient();
     try {
-      await supabase.auth.signOut();
-      router.push('/');
-      router.refresh();
-    } catch {
-      window.location.href = '/';
+      await signOut();
+    } finally {
+      setIsLoggingOut(false);
     }
   };
 

@@ -2,48 +2,33 @@ import { createServerClient, type CookieOptions } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 import { getSupabaseEnv } from './env';
 
+export interface CookieToSet {
+  name: string;
+  value: string;
+  options?: CookieOptions;
+}
+
 export function createClient() {
   const cookieStore = cookies();
   const { url, anonKey, isConfigured } = getSupabaseEnv();
 
-  if (!isConfigured) {
-    return createServerClient(
-      url || 'https://placeholder.supabase.co',
-      anonKey || 'placeholder-anon-key',
-      {
-        cookies: {
-          get(name: string) {
-            return cookieStore.get(name)?.value;
-          },
-          set(name: string, value: string, options: CookieOptions) {
-            try {
-              cookieStore.set({ name, value, ...options });
-            } catch {}
-          },
-          remove(name: string, options: CookieOptions) {
-            try {
-              cookieStore.set({ name, value: '', ...options });
-            } catch {}
-          },
-        },
-      }
-    );
-  }
+  const supabaseUrl = isConfigured ? url : url || 'https://placeholder.supabase.co';
+  const supabaseAnonKey = isConfigured ? anonKey : anonKey || 'placeholder-anon-key';
 
-  return createServerClient(url, anonKey, {
+  return createServerClient(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get(name: string) {
-        return cookieStore.get(name)?.value;
+      getAll() {
+        return cookieStore.getAll();
       },
-      set(name: string, value: string, options: CookieOptions) {
+      setAll(cookiesToSet: CookieToSet[]) {
         try {
-          cookieStore.set({ name, value, ...options });
-        } catch {}
-      },
-      remove(name: string, options: CookieOptions) {
-        try {
-          cookieStore.set({ name, value: '', ...options });
-        } catch {}
+          cookiesToSet.forEach(({ name, value, options }) =>
+            cookieStore.set({ name, value, ...options })
+          );
+        } catch {
+          // The `setAll` method was called from a Server Component.
+          // This can be ignored if middleware is refreshing user sessions.
+        }
       },
     },
   });
@@ -62,11 +47,10 @@ export function createServiceClient() {
 
   return createServerClient(url, serviceRoleKey, {
     cookies: {
-      get() {
-        return undefined;
+      getAll() {
+        return [];
       },
-      set() {},
-      remove() {},
+      setAll() {},
     },
   });
 }

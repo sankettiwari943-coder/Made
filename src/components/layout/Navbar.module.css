@@ -4,7 +4,7 @@
   left: 0;
   right: 0;
   z-index: 100;
-  background-color: rgba(9, 9, 11, 0.92);
+  background-color: rgba(12, 12, 14, 0.92);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border-subtle);
@@ -50,6 +50,7 @@
   transition: color var(--transition-fast);
   position: relative;
   padding: var(--space-2) 0;
+  text-decoration: none;
 }
 
 .navLink:hover {
@@ -83,6 +84,328 @@
   }
 }
 
+/* Auth Groupings */
+.authActiveGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.authGuestGroup {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.authSkeleton {
+  width: 140px;
+  height: 36px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-technical);
+  border-radius: var(--radius-xs);
+  opacity: 0.5;
+  animation: pulse-placeholder 1.5s infinite ease-in-out;
+}
+
+@keyframes pulse-placeholder {
+  0% { opacity: 0.3; }
+  50% { opacity: 0.7; }
+  100% { opacity: 0.3; }
+}
+
+/* Admin Shortcut Pill */
+.adminShortcut {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: rgba(30, 90, 255, 0.1);
+  border: 1px solid var(--accent-border);
+  color: var(--accent-primary-hover);
+  padding: 5px 10px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.adminShortcut:hover,
+.adminShortcutActive {
+  background-color: var(--accent-primary);
+  color: #ffffff;
+  border-color: var(--accent-primary);
+}
+
+.adminPulseDot {
+  width: 6px;
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background-color: var(--accent-primary-hover);
+}
+
+.adminShortcut:hover .adminPulseDot,
+.adminShortcutActive .adminPulseDot {
+  background-color: #ffffff;
+}
+
+/* Workspace Action Button */
+.workspaceBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-technical);
+  color: var(--text-secondary);
+  padding: 6px 12px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.workspaceBtn:hover {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--border-regular);
+}
+
+.workspaceBtnActive {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+  border-color: var(--accent-primary);
+}
+
+/* User Profile Trigger & Dropdown Menu */
+.userMenuContainer {
+  position: relative;
+}
+
+.userProfileTrigger {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-technical);
+  padding: 4px 10px 4px 5px;
+  border-radius: var(--radius-xs);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.userProfileTrigger:hover,
+.userProfileTriggerActive {
+  background-color: var(--bg-surface-elevated);
+  border-color: var(--border-strong);
+}
+
+.avatarBox {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-xs);
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-regular);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.avatarImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatarInitials {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  color: var(--accent-primary-hover);
+  letter-spacing: 0.05em;
+}
+
+.userTriggerName {
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  max-width: 130px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-primary);
+}
+
+.dropdownChevron {
+  color: var(--text-muted);
+  transition: transform var(--transition-fast);
+}
+
+.dropdownChevronOpen {
+  transform: rotate(180deg);
+}
+
+/* User Dropdown Surface */
+.userDropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  width: 260px;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-technical);
+  border-radius: var(--radius-xs);
+  box-shadow: var(--shadow-card);
+  backdrop-filter: blur(20px);
+  z-index: 110;
+  overflow: hidden;
+  animation: dropdown-fade-in 140ms ease-out;
+}
+
+@keyframes dropdown-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.dropdownHeader {
+  padding: var(--space-4) var(--space-4) var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+  background-color: rgba(255, 255, 255, 0.02);
+}
+
+.dropdownIdentity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  margin-bottom: var(--space-2);
+}
+
+.dropdownAvatarBox {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-xs);
+  background-color: var(--bg-canvas);
+  border: 1px solid var(--border-technical);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.dropdownUserMeta {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.dropdownFullName {
+  font-family: var(--font-sans);
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdownUsername {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.dropdownRoleRow {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: var(--space-1);
+}
+
+.dropdownSection {
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dropdownItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.dropdownItem:hover {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.dropdownItemActive {
+  background-color: var(--bg-surface-elevated);
+  color: var(--accent-primary-hover);
+  font-weight: 600;
+}
+
+.adminDropdownItem {
+  color: var(--accent-primary-hover);
+}
+
+.adminDropdownItem:hover {
+  background-color: var(--accent-subtle);
+  color: #ffffff;
+}
+
+.dropdownDivider {
+  height: 1px;
+  background-color: var(--border-subtle);
+  margin: 0;
+}
+
+.dropdownSignOutBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: var(--radius-xs);
+  border: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--color-danger);
+  cursor: pointer;
+  text-align: left;
+  transition: all var(--transition-fast);
+}
+
+.dropdownSignOutBtn:hover {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+}
+
+/* Mobile Toggle & Menu */
 .mobileMenuBtn {
   display: flex;
   align-items: center;
@@ -141,9 +464,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
+  text-decoration: none;
 }
 
-.mobileNavLink:hover {
+.mobileNavLink:hover,
+.mobileNavLink.active {
   color: var(--accent-primary-hover);
 }
 
@@ -160,4 +485,71 @@
   margin-top: var(--space-8);
   padding-top: var(--space-6);
   border-top: 1px solid var(--border-technical);
+}
+
+.mobileGuestButtons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.mobileUserCard {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-technical);
+  border-radius: var(--radius-xs);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.mobileUserHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.mobileUserName {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.mobileUserHandle {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+}
+
+.mobileUserLinks {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.mobileSubLink {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 8px 10px;
+  border-radius: var(--radius-xs);
+  font-family: var(--font-mono);
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: all var(--transition-fast);
+}
+
+.mobileSubLink:hover,
+.mobileSubLink.active {
+  background-color: var(--bg-surface-elevated);
+  color: var(--text-primary);
+}
+
+.mobileAdminSubLink {
+  color: var(--accent-primary-hover);
 }

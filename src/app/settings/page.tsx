@@ -9,6 +9,7 @@ import { Container } from '@/components/layout/Container';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { SystemConfigRequired } from '@/components/auth/SystemConfigRequired';
+import { useAuth } from '@/context/AuthContext';
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -110,11 +111,10 @@ export default function SettingsPage() {
     }
   };
 
+  const { signOut } = useAuth();
+
   const handleSignOut = async () => {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push('/');
-    router.refresh();
+    await signOut();
   };
 
   return (

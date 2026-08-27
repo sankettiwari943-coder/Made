@@ -3,7 +3,12 @@
  * Ensures the application detects missing or placeholder keys and triggers the technical configuration state.
  */
 
-export function getSupabaseEnv() {
+export function getSupabaseEnv(): {
+  url: string;
+  anonKey: string;
+  serviceRoleKey: string;
+  isConfigured: boolean;
+} {
   const url =
     process.env.NEXT_PUBLIC_SUPABASE_URL ||
     process.env.SUPABASE_URL;
@@ -16,12 +21,13 @@ export function getSupabaseEnv() {
     process.env.SUPABASE_SERVICE_ROLE_KEY ||
     process.env.SUPABASE_SECRET_KEY;
 
-  const isConfigured =
-    Boolean(url) &&
-    Boolean(anonKey) &&
+  const isConfigured = Boolean(
+    url &&
+    anonKey &&
     url !== 'https://your-project-ref.supabase.co' &&
     anonKey !== 'your-supabase-anon-key' &&
-    url?.startsWith('https://');
+    url.startsWith('https://')
+  );
 
   return {
     url: url || '',
@@ -30,4 +36,3 @@ export function getSupabaseEnv() {
     isConfigured,
   };
 }
-
