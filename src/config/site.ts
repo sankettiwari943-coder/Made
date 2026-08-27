@@ -100,7 +100,7 @@ export const siteConfig: SiteConfig = {
   url: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
   ogImage: "/brand/og-image.png",
   socials: {
-    linkedin: "https://www.linkedin.com/company/made-community",
+    linkedin: "https://www.linkedin.com/company/m-a-d-e-s/",
   },
 
   founder: {
