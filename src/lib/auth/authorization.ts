@@ -196,27 +196,52 @@ export async function requireProfile(options?: { allowIncompleteOnboarding?: boo
 }
 
 /**
- * Server authorization helper for Admin permissions
+ * Check if current user is an authenticated Super Admin without redirecting.
+ * Used by AdminLayout and protective boundaries to determine whether to render
+ * the Control Center or the Access Denied technical security screen.
  */
-export async function requireAdmin() {
-  const profile = await requireProfile();
-
-  if (profile.role !== 'ADMIN' && profile.role !== 'SUPER_ADMIN') {
-    redirect('/dashboard');
+export async function getSuperAdminAuth(): Promise<{
+  isSuperAdmin: boolean;
+  user: any | null;
+  profile: Profile | null;
+}> {
+  const user = await getUser();
+  if (!user) {
+    return { isSuperAdmin: false, user: null, profile: null };
   }
 
-  return profile;
+  const profile = await getProfile(user.id);
+  const isSuperAdmin = Boolean(profile && profile.role === 'SUPER_ADMIN');
+
+  return {
+    isSuperAdmin,
+    user,
+    profile,
+  };
 }
 
 /**
- * Server authorization helper for Super Admin permissions
+ * Server authorization helper for Admin permissions
  */
-export async function requireSuperAdmin() {
-  const profile = await requireProfile();
+export async function requireAdmin(): Promise<Profile> {
+  return requireSuperAdmin();
+}
 
-  if (profile.role !== 'SUPER_ADMIN') {
-    redirect('/dashboard');
+/**
+ * Server authorization helper for Super Admin permissions.
+ * Throws error in Server Actions or redirects unauthenticated visitors to /login.
+ */
+export async function requireSuperAdmin(): Promise<Profile> {
+  const user = await getUser();
+  if (!user) {
+    redirect('/login?next=/admin');
+  }
+
+  const profile = await getProfile(user.id);
+  if (!profile || profile.role !== 'SUPER_ADMIN') {
+    throw new Error('Unauthorized: SUPER_ADMIN role clearance required.');
   }
 
   return profile;
 }
+

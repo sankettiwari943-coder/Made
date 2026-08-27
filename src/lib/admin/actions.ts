@@ -1,10 +1,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { createClient } from '../supabase/server';
-import { requireAdmin } from '../auth/authorization';
+import { createClient, createServiceClient } from '../supabase/server';
+import { requireSuperAdmin } from '../auth/authorization';
 import { recordAdminAuditLog } from './audit';
-import { ApplicationStatus, CareerRoleStatus, OpportunityStatus } from '../supabase/types';
+import { ApplicationStatus, CareerRoleStatus, OpportunityStatus, UserRole } from '../supabase/types';
+
 
 /**
  * Super Admin: Create or update a career role
@@ -27,7 +28,7 @@ export async function saveCareerRoleAction(formData: {
   status: CareerRoleStatus;
   is_published: boolean;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const payload = {
@@ -94,7 +95,7 @@ export async function saveCareerRoleAction(formData: {
  * Super Admin: Delete / Archive a career role
  */
 export async function deleteCareerRoleAction(roleId: string, roleTitle: string) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const { error } = await supabase
@@ -133,7 +134,7 @@ export async function saveOpportunityAction(formData: {
   cover_image?: string | null;
   is_published: boolean;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const payload = {
@@ -200,7 +201,7 @@ export async function saveOpportunityAction(formData: {
  * Super Admin: Delete an opportunity
  */
 export async function deleteOpportunityAction(opportunityId: string, title: string) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const { error } = await supabase
@@ -237,7 +238,7 @@ export async function saveEventAction(formData: {
   cover_image?: string | null;
   is_published: boolean;
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const payload = {
@@ -302,7 +303,7 @@ export async function saveEventAction(formData: {
  * Super Admin: Delete an event
  */
 export async function deleteEventAction(eventId: string, title: string) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const { error } = await supabase
@@ -324,7 +325,7 @@ export async function deleteEventAction(eventId: string, title: string) {
  * Super Admin: Moderate / Toggle public visibility of a project
  */
 export async function moderateProjectVisibilityAction(projectId: string, isPublic: boolean, title: string) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const { error } = await supabase
@@ -357,7 +358,7 @@ export async function updateApplicationStatusAction(
   oldStatus: ApplicationStatus | null,
   applicantName: string
 ) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   // 1. Update application record
@@ -399,7 +400,7 @@ export async function updateApplicationStatusAction(
  * Super Admin: Add private internal note to an application
  */
 export async function addApplicationNoteAction(applicationId: string, content: string) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const cleanContent = content.trim();
@@ -435,7 +436,7 @@ export async function addApplicationNoteAction(applicationId: string, content: s
  * Super Admin: Delete private internal note
  */
 export async function deleteApplicationNoteAction(noteId: string, applicationId: string) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
   const supabase = createClient();
 
   const { error } = await supabase
@@ -456,7 +457,7 @@ export async function deleteApplicationNoteAction(noteId: string, applicationId:
  * Super Admin: Generate a secure time-limited signed URL for private resume access
  */
 export async function getSecureResumeDownloadUrl(resumePath: string): Promise<string> {
-  await requireAdmin();
+  await requireSuperAdmin();
   const supabase = createClient();
 
   // Create signed URL valid for 300 seconds (5 minutes)
@@ -470,3 +471,39 @@ export async function getSecureResumeDownloadUrl(resumePath: string): Promise<st
 
   return data.signedUrl;
 }
+
+/**
+ * Super Admin: Update a builder's system role (MEMBER, ADMIN, SUPER_ADMIN)
+ */
+export async function updateBuilderRoleAction(
+  targetUserId: string,
+  newRole: UserRole,
+  builderName?: string
+) {
+  const admin = await requireSuperAdmin();
+  const serviceClient = createServiceClient();
+
+  const { error } = await serviceClient
+    .from('profiles')
+    .update({
+      role: newRole,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('id', targetUserId);
+
+  if (error) throw new Error(error.message);
+
+  await recordAdminAuditLog(
+    admin.id,
+    'USER_ROLE_UPDATED',
+    'BUILDER',
+    targetUserId,
+    { builderName: builderName || 'Builder', newRole }
+  );
+
+  revalidatePath('/admin/builders');
+  revalidatePath('/admin');
+  revalidatePath('/builders');
+  return { success: true };
+}
+

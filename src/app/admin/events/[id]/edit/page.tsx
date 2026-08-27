@@ -1,12 +1,13 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { Event } from '@/lib/supabase/types';
 import { EventEditForm } from './EventEditForm';
 
 export default async function EditEventPage({ params }: { params: { id: string } }) {
-  await requireAdmin();
+  await requireSuperAdmin();
+
   const supabase = createClient();
 
   const { data: event, error } = await supabase

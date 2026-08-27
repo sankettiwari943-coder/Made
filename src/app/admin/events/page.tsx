@@ -1,13 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { Event } from '@/lib/supabase/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
 export default async function AdminEventsPage() {
-  await requireAdmin();
+  await requireSuperAdmin();
+
   const supabase = createClient();
 
   let events: Event[] = [];

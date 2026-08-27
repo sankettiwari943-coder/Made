@@ -1,11 +1,12 @@
 import React from 'react';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 import { siteConfig } from '@/config/site';
 import { Badge } from '@/components/ui/Badge';
 
 export default async function AdminSettingsPage() {
-  const profile = await requireAdmin();
+  const profile = await requireSuperAdmin();
+
   const { url, isConfigured } = getSupabaseEnv();
 
   return (

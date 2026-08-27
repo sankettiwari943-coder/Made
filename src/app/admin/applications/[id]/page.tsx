@@ -1,6 +1,6 @@
 import React from 'react';
 import { notFound } from 'next/navigation';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { CareerApplication, ApplicationNote, ApplicationStatusHistory } from '@/lib/supabase/types';
 import { ApplicationDossierClient } from './ApplicationDossierClient';
@@ -10,7 +10,8 @@ export default async function AdminApplicationDetailPage({
 }: {
   params: { id: string };
 }) {
-  const admin = await requireAdmin();
+  const admin = await requireSuperAdmin();
+
   const supabase = createClient();
 
   const [appRes, notesRes, historyRes] = await Promise.all([

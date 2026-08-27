@@ -1,11 +1,12 @@
 import React from 'react';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { ProjectWithDetails } from '@/lib/supabase/types';
 import { AdminProjectsClient } from './AdminProjectsClient';
 
 export default async function AdminProjectsPage() {
-  await requireAdmin();
+  await requireSuperAdmin();
+
   const supabase = createClient();
 
   let projects: ProjectWithDetails[] = [];

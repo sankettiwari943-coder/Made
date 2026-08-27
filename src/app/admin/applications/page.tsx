@@ -1,5 +1,5 @@
 import React from 'react';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { CareerApplication } from '@/lib/supabase/types';
 import { AdminApplicationsClient } from './AdminApplicationsClient';
@@ -9,7 +9,8 @@ export default async function AdminApplicationsPage({
 }: {
   searchParams?: { roleId?: string; status?: string };
 }) {
-  await requireAdmin();
+  await requireSuperAdmin();
+
   const supabase = createClient();
 
   let applications: CareerApplication[] = [];

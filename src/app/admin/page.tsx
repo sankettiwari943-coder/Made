@@ -1,12 +1,13 @@
 import React from 'react';
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { getPlatformMetrics, getRecentAdminAuditLogs } from '@/lib/admin/audit';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
 export default async function AdminControlCenterPage() {
-  const profile = await requireAdmin();
+  const profile = await requireSuperAdmin();
+
   const [metrics, auditLogs] = await Promise.all([
     getPlatformMetrics(),
     getRecentAdminAuditLogs(10),

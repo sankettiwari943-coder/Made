@@ -1,13 +1,14 @@
 import React from 'react';
 import Link from 'next/link';
-import { requireAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { Profile } from '@/lib/supabase/types';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { BuilderRoleSelect } from './BuilderRoleSelect';
 
 export default async function AdminBuildersPage() {
-  await requireAdmin();
+  await requireSuperAdmin();
   const supabase = createClient();
 
   let builders: Profile[] = [];
@@ -84,7 +85,7 @@ export default async function AdminBuildersPage() {
               }}
             >
               <div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)', flexWrap: 'wrap' }}>
                   <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase' }}>
                     {builder.full_name || 'Anonymous Builder'}
                   </h3>
@@ -108,7 +109,13 @@ export default async function AdminBuildersPage() {
                 </span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                <BuilderRoleSelect
+                  userId={builder.id}
+                  currentRole={builder.role}
+                  builderName={builder.full_name || builder.username || 'Builder'}
+                />
+
                 {builder.username && builder.onboarding_completed && (
                   <Button href={`/builders/${builder.username}`} variant="outline" size="sm" target="_blank">
                     Public Dossier ↗
@@ -122,3 +129,4 @@ export default async function AdminBuildersPage() {
     </div>
   );
 }
+

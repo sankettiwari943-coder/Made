@@ -48,3 +48,25 @@ export function createClient() {
     },
   });
 }
+
+/**
+ * Server-only service role client for elevated administrative actions (e.g. role assignment)
+ * NEVER expose to the browser.
+ */
+export function createServiceClient() {
+  const { url, serviceRoleKey, isConfigured } = getSupabaseEnv();
+
+  if (!isConfigured || !serviceRoleKey) {
+    return createClient();
+  }
+
+  return createServerClient(url, serviceRoleKey, {
+    cookies: {
+      get() {
+        return undefined;
+      },
+      set() {},
+      remove() {},
+    },
+  });
+}
