@@ -460,14 +460,21 @@ export default function CareerApplyPage({
     setGeneralError(null);
     setIsSubmitting(true);
 
+    const supabase = createClient();
+    const {
+      data: { user: currentUser },
+    } = await supabase.auth.getUser();
+
     const resolvedFullName = fullName.trim() || profile?.full_name || '';
-    const candidateEmail = email.trim() || profile?.email || '';
+    const candidateEmail = (currentUser?.email || email || profile?.email || '').trim().toLowerCase();
 
     const payload = {
       full_name: resolvedFullName,
       name: resolvedFullName,
-      email: candidateEmail,
-      applicant_email: candidateEmail,
+      email: currentUser?.email || candidateEmail,
+      applicant_email: currentUser?.email || candidateEmail,
+      applicant_id: currentUser?.id || userId,
+      user_id: currentUser?.id || userId,
       cover_message: coverMessage.trim(),
       what_they_build: whatTheyBuild.trim(),
       experience: experience.trim(),
@@ -490,11 +497,11 @@ export default function CareerApplyPage({
 
     try {
       // 1. Upload resume if provided
+      const resolvedUserId = currentUser?.id || userId;
       let finalResumePath = null;
-      if (resumeFile && userId) {
-        const supabase = createClient();
+      if (resumeFile && resolvedUserId) {
         const fileExt = resumeFile.name.split('.').pop() || 'pdf';
-        const filePath = `${userId}/${Date.now()}.${fileExt}`;
+        const filePath = `${resolvedUserId}/${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
           .from('resumes')
           .upload(filePath, resumeFile);
@@ -511,6 +518,8 @@ export default function CareerApplyPage({
         name: payload.name,
         email: payload.email,
         applicant_email: payload.applicant_email,
+        applicant_id: payload.applicant_id,
+        user_id: payload.user_id,
         cover_message: payload.cover_message,
         what_they_build: payload.what_they_build,
         experience: payload.experience,

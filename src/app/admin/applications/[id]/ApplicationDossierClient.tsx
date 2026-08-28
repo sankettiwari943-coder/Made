@@ -69,10 +69,12 @@ export function ApplicationDossierClient({
   const applicantEmail =
     application.email ||
     application.applicant_email ||
-    application.user_email ||
     application.contact_email ||
     application.profiles?.email ||
+    (application.profiles as any)?.contact_email ||
     application.applicant?.email ||
+    (application.applicant as any)?.contact_email ||
+    (application as any).user_email ||
     application.auth_user?.email ||
     'No email provided';
 

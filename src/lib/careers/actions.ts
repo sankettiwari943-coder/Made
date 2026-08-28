@@ -35,6 +35,8 @@ export async function submitCareerApplicationAction(formData: {
   name?: string;
   email?: string;
   applicant_email?: string;
+  applicant_id?: string;
+  user_id?: string;
   cover_message: string;
   what_they_build: string;
   experience: string;

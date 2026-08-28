@@ -17,7 +17,7 @@ export default async function AdminApplicationDetailPage({
   const [appRes, notesRes, historyRes] = await Promise.all([
     supabase
       .from('career_applications')
-      .select('*, role:career_roles(*), applicant:profiles(*)')
+      .select('*, role:career_roles(*), applicant:profiles(*), profiles:profiles(*)')
       .eq('id', params.id)
       .single(),
     supabase
@@ -36,9 +36,16 @@ export default async function AdminApplicationDetailPage({
     notFound();
   }
 
+  const applicationData = appRes.data as any;
+  if (applicationData.applicant && !applicationData.profiles) {
+    applicationData.profiles = applicationData.applicant;
+  } else if (applicationData.profiles && !applicationData.applicant) {
+    applicationData.applicant = applicationData.profiles;
+  }
+
   return (
     <ApplicationDossierClient
-      initialApplication={appRes.data as CareerApplication}
+      initialApplication={applicationData as CareerApplication}
       initialNotes={(notesRes.data || []) as ApplicationNote[]}
       initialHistory={(historyRes.data || []) as ApplicationStatusHistory[]}
       adminId={admin.id}
