@@ -29,15 +29,47 @@ export function AdminApplicationsClient({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState(initialFilterStatus);
 
+  const getApplicantName = (app: CareerApplication) => {
+    return (
+      app.full_name ||
+      app.name ||
+      app.applicant_name ||
+      app.profiles?.full_name ||
+      app.profiles?.name ||
+      app.applicant?.full_name ||
+      app.applicant?.name ||
+      app.email ||
+      app.applicant?.email ||
+      'Anonymous Applicant'
+    );
+  };
+
+  const getApplicantEmail = (app: CareerApplication) => {
+    return (
+      app.email ||
+      app.applicant_email ||
+      app.user_email ||
+      app.contact_email ||
+      app.profiles?.email ||
+      app.applicant?.email ||
+      app.auth_user?.email ||
+      ''
+    );
+  };
+
   const filteredApplications = applications.filter((app) => {
     const matchesStatus = selectedStatus === 'ALL' || app.status === selectedStatus;
 
     const query = searchTerm.toLowerCase().trim();
+    const appName = getApplicantName(app).toLowerCase();
+    const appEmail = getApplicantEmail(app).toLowerCase();
     const matchesSearch =
       query === '' ||
       (app.reference_code && app.reference_code.toLowerCase().includes(query)) ||
-      (app.applicant?.full_name && app.applicant.full_name.toLowerCase().includes(query)) ||
+      appName.includes(query) ||
+      appEmail.includes(query) ||
       (app.applicant?.username && app.applicant.username.toLowerCase().includes(query)) ||
+      (app.profiles?.username && app.profiles.username.toLowerCase().includes(query)) ||
       (app.role?.title && app.role.title.toLowerCase().includes(query));
 
     return matchesStatus && matchesSearch;
@@ -161,7 +193,7 @@ export function AdminApplicationsClient({
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
                   <h3 style={{ fontFamily: 'var(--font-display)', fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', textTransform: 'uppercase' }}>
-                    {app.applicant?.full_name || 'Anonymous Applicant'}
+                    {getApplicantName(app)}
                   </h3>
                   <Badge variant={app.status === 'ACCEPTED' ? 'live' : app.status === 'SHORTLISTED' || app.status === 'INTERVIEW' ? 'accent' : 'default'} useBrackets>
                     {app.status}
@@ -172,7 +204,7 @@ export function AdminApplicationsClient({
                 </div>
 
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-dim)', marginTop: '4px', display: 'block' }}>
-                  ROLE: {app.role?.title || 'General Application'} // HANDLE: {app.applicant?.username ? `@${app.applicant.username}` : 'None'} // SUBMITTED: {new Date(app.created_at).toLocaleDateString()}
+                  ROLE: {app.role?.title || 'General Application'} // HANDLE: {(app.applicant?.username || app.profiles?.username) ? `@${app.applicant?.username || app.profiles?.username}` : 'None'} // SUBMITTED: {new Date(app.created_at).toLocaleDateString()}
                 </span>
               </div>
 

@@ -445,6 +445,13 @@ CREATE TABLE IF NOT EXISTS public.career_applications (
     reference_code TEXT UNIQUE NOT NULL,
     role_id UUID NOT NULL REFERENCES public.career_roles(id) ON DELETE CASCADE,
     applicant_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    full_name TEXT,
+    name TEXT,
+    applicant_name TEXT,
+    email TEXT,
+    applicant_email TEXT,
+    user_email TEXT,
+    contact_email TEXT,
     cover_message TEXT NOT NULL,
     what_they_build TEXT NOT NULL,
     experience TEXT NOT NULL,
@@ -458,6 +465,14 @@ CREATE TABLE IF NOT EXISTS public.career_applications (
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     CONSTRAINT uq_user_active_role_app UNIQUE (applicant_id, role_id)
 );
+
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS full_name TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS name TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS applicant_name TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS email TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS applicant_email TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS user_email TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS contact_email TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_apps_ref ON public.career_applications(reference_code);
 CREATE INDEX IF NOT EXISTS idx_apps_role ON public.career_applications(role_id);

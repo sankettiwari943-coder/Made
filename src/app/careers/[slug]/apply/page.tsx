@@ -31,6 +31,7 @@ export default function CareerApplyPage({
   const [existingAppId, setExistingAppId] = useState<string | null>(null);
 
   // Form Fields
+  const [fullName, setFullName] = useState('');
   const [whatTheyBuild, setWhatTheyBuild] = useState('');
   const [experience, setExperience] = useState('');
   const [coverMessage, setCoverMessage] = useState('');
@@ -72,6 +73,7 @@ export default function CareerApplyPage({
 
       if (profileData) {
         setProfile(profileData as Profile);
+        if (profileData.full_name) setFullName(profileData.full_name);
         if (profileData.github_url) setGithubUrl(profileData.github_url);
         if (profileData.linkedin_url) setLinkedinUrl(profileData.linkedin_url);
         if (profileData.portfolio_url) setPortfolioUrl(profileData.portfolio_url);
@@ -272,7 +274,10 @@ export default function CareerApplyPage({
     setGeneralError(null);
     setIsSubmitting(true);
 
+    const resolvedFullName = fullName.trim() || profile?.full_name || '';
+
     const payload = {
+      full_name: resolvedFullName,
       cover_message: coverMessage.trim(),
       what_they_build: whatTheyBuild.trim(),
       experience: experience.trim(),
@@ -312,12 +317,20 @@ export default function CareerApplyPage({
 
       // 2. Generate unique reference code
       const refCode = generateReferenceCode();
+      const userEmail = profile?.email || null;
 
       // 3. Insert application row
       const { error: insertError } = await supabase.from('career_applications').insert({
         reference_code: refCode,
         role_id: role.id,
         applicant_id: userId || '',
+        full_name: resolvedFullName,
+        name: resolvedFullName,
+        applicant_name: resolvedFullName,
+        email: userEmail,
+        applicant_email: userEmail,
+        user_email: userEmail,
+        contact_email: userEmail,
         cover_message: payload.cover_message,
         what_they_build: payload.what_they_build,
         experience: payload.experience,
@@ -412,27 +425,29 @@ export default function CareerApplyPage({
           )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-8)' }}>
-            {/* Section 01: Identity Pre-fill */}
+            {/* Section 01: Candidate Identifier */}
             <div>
               <span className="technical-label" style={{ color: 'var(--accent-primary)', display: 'block', marginBottom: 'var(--space-3)' }}>
-                01 // YOUR IDENTIFIER
+                01 // CANDIDATE IDENTIFIER
               </span>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 'var(--space-4)', padding: 'var(--space-4)', backgroundColor: 'var(--bg-canvas)', border: '1px solid var(--border-technical)' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 'var(--space-4)' }}>
+                <Input
+                  label="Full Name / Candidate Name"
+                  placeholder="e.g. Satoshi Nakamoto"
+                  value={fullName}
+                  onChange={(e) => setFullName(e.target.value)}
+                  error={errors.full_name || errors.name}
+                  required
+                />
                 <div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-dim)' }}>
-                    NAME:
+                  <span className="technical-label" style={{ display: 'block', marginBottom: 'var(--space-2)' }}>
+                    AUTHENTICATED BUILDER
                   </span>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-primary)', fontWeight: 700 }}>
-                    {profile?.full_name || 'Authenticated Builder'}
-                  </p>
-                </div>
-                <div>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-dim)' }}>
-                    HANDLE:
-                  </span>
-                  <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--accent-primary-hover)' }}>
-                    @{profile?.username || 'builder'}
-                  </p>
+                  <div style={{ padding: 'var(--space-3)', backgroundColor: 'var(--bg-canvas)', border: '1px solid var(--border-technical)', borderRadius: 'var(--radius-xs)', minHeight: '44px', display: 'flex', alignItems: 'center' }}>
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--accent-primary-hover)' }}>
+                      @{profile?.username || 'builder'}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>

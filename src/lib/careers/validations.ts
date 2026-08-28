@@ -96,6 +96,14 @@ export const CareerRoleSchema = z.object({
 export type CareerRoleInput = z.infer<typeof CareerRoleSchema>;
 
 export const CareerApplicationSchema = z.object({
+  full_name: z
+    .string()
+    .min(2, { message: 'Full name must be at least 2 characters.' })
+    .max(120, { message: 'Full name cannot exceed 120 characters.' })
+    .trim()
+    .optional()
+    .or(z.literal('')),
+  name: z.string().optional().or(z.literal('')),
   cover_message: z
     .string()
     .min(20, { message: 'Please share a brief introduction (minimum 20 characters).' })

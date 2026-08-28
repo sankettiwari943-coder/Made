@@ -54,6 +54,28 @@ export function ApplicationDossierClient({
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
 
+  const applicantName =
+    application.full_name ||
+    application.name ||
+    application.applicant_name ||
+    application.profiles?.full_name ||
+    application.profiles?.name ||
+    application.applicant?.full_name ||
+    application.applicant?.name ||
+    application.email ||
+    application.applicant?.email ||
+    'N/A';
+
+  const applicantEmail =
+    application.email ||
+    application.applicant_email ||
+    application.user_email ||
+    application.contact_email ||
+    application.profiles?.email ||
+    application.applicant?.email ||
+    application.auth_user?.email ||
+    'No email provided';
+
   const handleStatusChange = async () => {
     if (selectedStatus === application.status) return;
 
@@ -65,7 +87,7 @@ export function ApplicationDossierClient({
         application.id,
         selectedStatus,
         application.status,
-        application.applicant?.full_name || 'Applicant'
+        applicantName !== 'N/A' ? applicantName : 'Applicant'
       );
 
       setApplication((prev) => ({ ...prev, status: selectedStatus }));
@@ -170,7 +192,7 @@ export function ApplicationDossierClient({
               marginTop: 'var(--space-2)',
             }}
           >
-            {application.applicant?.full_name || 'Candidate Submission'}
+            {applicantName !== 'N/A' ? applicantName : 'Candidate Submission'}
           </h1>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginTop: 'var(--space-1)' }}>
             APPLYING FOR: {application.role?.title || 'Open Position'} ({application.role?.department || 'GENERAL'})
@@ -201,22 +223,32 @@ export function ApplicationDossierClient({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)' }}>
               <div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-dim)' }}>FULL NAME</span>
-                <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{application.applicant?.full_name || 'N/A'}</p>
+                <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{applicantName}</p>
               </div>
 
               <div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-dim)' }}>EMAIL ADDRESS</span>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '2px' }}>
-                  {application.applicant?.email || 'Registered account'}
+                  {applicantEmail !== 'No email provided' ? (
+                    <a
+                      href={`mailto:${applicantEmail}`}
+                      className="text-white hover:underline"
+                      style={{ color: 'var(--text-primary)', textDecoration: 'underline' }}
+                    >
+                      {applicantEmail}
+                    </a>
+                  ) : (
+                    'No email provided'
+                  )}
                 </p>
               </div>
 
               <div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-dim)' }}>BUILDER HANDLE</span>
                 <p style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-primary)', marginTop: '2px' }}>
-                  {application.applicant?.username ? (
-                    <Link href={`/builders/${application.applicant.username}`} target="_blank" style={{ color: 'var(--accent-primary-hover)', textDecoration: 'underline' }}>
-                      @{application.applicant.username} ↗
+                  {(application.applicant?.username || application.profiles?.username) ? (
+                    <Link href={`/builders/${application.applicant?.username || application.profiles?.username}`} target="_blank" style={{ color: 'var(--accent-primary-hover)', textDecoration: 'underline' }}>
+                      @{application.applicant?.username || application.profiles?.username} ↗
                     </Link>
                   ) : (
                     'Not claimed'

@@ -82,6 +82,7 @@ export type AdminAuditAction =
 export interface Profile {
   id: string;
   full_name: string;
+  name?: string | null;
   username: string | null;
   email: string | null;
   avatar_url: string | null;
@@ -279,6 +280,13 @@ export interface CareerApplication {
   reference_code: string;
   role_id: string;
   applicant_id: string;
+  full_name?: string | null;
+  name?: string | null;
+  applicant_name?: string | null;
+  email?: string | null;
+  applicant_email?: string | null;
+  user_email?: string | null;
+  contact_email?: string | null;
   cover_message: string;
   what_they_build: string;
   experience: string;
@@ -292,6 +300,8 @@ export interface CareerApplication {
   updated_at: string;
   role?: CareerRole;
   applicant?: Profile;
+  profiles?: Profile;
+  auth_user?: { email?: string | null } | null;
 }
 
 export interface ApplicationNote {
