@@ -86,11 +86,25 @@ export default function CareerApplyPage({
 
       if (profileData) {
         setProfile(profileData as Profile);
-        if (profileData.full_name) setFullName(profileData.full_name);
-        if (profileData.email) setEmail(profileData.email);
         if (profileData.github_url) setGithubUrl(profileData.github_url);
         if (profileData.linkedin_url) setLinkedinUrl(profileData.linkedin_url);
         if (profileData.portfolio_url) setPortfolioUrl(profileData.portfolio_url);
+      }
+
+      const defaultCandidateName =
+        profileData?.full_name ||
+        (profileData as any)?.name ||
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        '';
+
+      if (defaultCandidateName) {
+        setFullName(defaultCandidateName);
+      }
+
+      const defaultCandidateEmail = user?.email || profileData?.email || '';
+      if (defaultCandidateEmail) {
+        setEmail(defaultCandidateEmail);
       }
 
       // 2. Fetch Role
@@ -465,14 +479,21 @@ export default function CareerApplyPage({
       data: { user: currentUser },
     } = await supabase.auth.getUser();
 
-    const resolvedFullName = fullName.trim() || profile?.full_name || '';
+    const resolvedFullName = (
+      fullName ||
+      profile?.full_name ||
+      (profile as any)?.name ||
+      currentUser?.user_metadata?.full_name ||
+      currentUser?.user_metadata?.name ||
+      ''
+    ).trim();
     const candidateEmail = (currentUser?.email || email || profile?.email || '').trim().toLowerCase();
 
     const payload = {
       full_name: resolvedFullName,
       name: resolvedFullName,
-      email: currentUser?.email || candidateEmail,
-      applicant_email: currentUser?.email || candidateEmail,
+      email: candidateEmail,
+      applicant_email: candidateEmail,
       applicant_id: currentUser?.id || userId,
       user_id: currentUser?.id || userId,
       cover_message: coverMessage.trim(),
@@ -632,7 +653,7 @@ export default function CareerApplyPage({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   error={errors.full_name || errors.name}
-                  required
+                  required={true}
                 />
                 <Input
                   label="Contact / Account Email"
@@ -641,7 +662,9 @@ export default function CareerApplyPage({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   error={errors.email || errors.applicant_email}
-                  required
+                  required={true}
+                  disabled={Boolean(userId)}
+                  helperText={userId ? 'Locked to your authenticated account email.' : undefined}
                 />
                 <div>
                   <span className="technical-label" style={{ display: 'block', marginBottom: 'var(--space-2)' }}>

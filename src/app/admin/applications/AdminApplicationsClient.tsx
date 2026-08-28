@@ -31,15 +31,13 @@ export function AdminApplicationsClient({
 
   const getApplicantName = (app: CareerApplication) => {
     return (
-      app.full_name ||
-      app.name ||
-      app.applicant_name ||
-      app.profiles?.full_name ||
-      app.profiles?.name ||
-      app.applicant?.full_name ||
-      app.applicant?.name ||
-      app.email ||
-      app.applicant?.email ||
+      (app.full_name && app.full_name !== app.email ? app.full_name : null) ||
+      (app.name && app.name !== app.email ? app.name : null) ||
+      (app.applicant_name && app.applicant_name !== app.email ? app.applicant_name : null) ||
+      (app.profiles?.full_name && app.profiles.full_name !== app.email ? app.profiles.full_name : null) ||
+      (app.profiles?.name && app.profiles.name !== app.email ? app.profiles.name : null) ||
+      (app.applicant?.full_name && app.applicant.full_name !== app.email ? app.applicant.full_name : null) ||
+      (app.applicant?.name && app.applicant.name !== app.email ? app.applicant.name : null) ||
       'Anonymous Applicant'
     );
   };

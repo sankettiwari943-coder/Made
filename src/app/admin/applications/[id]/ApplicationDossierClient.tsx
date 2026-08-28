@@ -54,17 +54,15 @@ export function ApplicationDossierClient({
   const [isLoadingResume, setIsLoadingResume] = useState(false);
   const [resumeError, setResumeError] = useState<string | null>(null);
 
-  const applicantName =
-    application.full_name ||
-    application.name ||
-    application.applicant_name ||
-    application.profiles?.full_name ||
-    application.profiles?.name ||
-    application.applicant?.full_name ||
-    application.applicant?.name ||
-    application.email ||
-    application.applicant?.email ||
-    'N/A';
+  const candidateFullName =
+    (application.full_name && application.full_name !== application.email ? application.full_name : null) ||
+    (application.name && application.name !== application.email ? application.name : null) ||
+    (application.applicant_name && application.applicant_name !== application.email ? application.applicant_name : null) ||
+    (application.profiles?.full_name && application.profiles.full_name !== application.email ? application.profiles.full_name : null) ||
+    (application.profiles?.name && application.profiles.name !== application.email ? application.profiles.name : null) ||
+    (application.applicant?.full_name && application.applicant.full_name !== application.email ? application.applicant.full_name : null) ||
+    (application.applicant?.name && application.applicant.name !== application.email ? application.applicant.name : null) ||
+    'Anonymous Applicant';
 
   const applicantEmail =
     application.email ||
@@ -89,7 +87,7 @@ export function ApplicationDossierClient({
         application.id,
         selectedStatus,
         application.status,
-        applicantName !== 'N/A' ? applicantName : 'Applicant'
+        candidateFullName !== 'Anonymous Applicant' ? candidateFullName : 'Applicant'
       );
 
       setApplication((prev) => ({ ...prev, status: selectedStatus }));
@@ -194,7 +192,7 @@ export function ApplicationDossierClient({
               marginTop: 'var(--space-2)',
             }}
           >
-            {applicantName !== 'N/A' ? applicantName : 'Candidate Submission'}
+            {candidateFullName}
           </h1>
           <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8125rem', color: 'var(--text-secondary)', display: 'block', marginTop: 'var(--space-1)' }}>
             APPLYING FOR: {application.role?.title || 'Open Position'} ({application.role?.department || 'GENERAL'})
@@ -225,7 +223,7 @@ export function ApplicationDossierClient({
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 'var(--space-4)' }}>
               <div>
                 <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--text-dim)' }}>FULL NAME</span>
-                <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{applicantName}</p>
+                <p style={{ fontWeight: 600, color: 'var(--text-primary)', marginTop: '2px' }}>{candidateFullName}</p>
               </div>
 
               <div>
