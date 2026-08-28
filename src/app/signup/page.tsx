@@ -130,7 +130,11 @@ export default function SignUpPage() {
       });
 
       if (!result.success) {
-        if (result.code === 'ACCOUNT_EXISTS') {
+        if (
+          result.code === 'ACCOUNT_EXISTS' ||
+          result.error?.toLowerCase().includes('already exists') ||
+          result.error?.toLowerCase().includes('already registered')
+        ) {
           setAccountExists(true);
           setGeneralError('An account with this email already exists. Please sign in instead.');
         } else {
@@ -184,7 +188,7 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          {/* Account Exists Friendly Notice & Sign In CTA */}
+          {/* Account Exists Inline Error/Warning & Sign In CTA */}
           {accountExists && (
             <div
               style={{
@@ -197,14 +201,20 @@ export default function SignUpPage() {
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-2)' }}>
                 <span className="technical-label" style={{ color: 'var(--accent-primary-hover)' }}>
-                  [ ACCOUNT REGISTERED ]
+                  [ NOTICE ]
                 </span>
               </div>
               <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>
                 An account with this email already exists. Please sign in instead.
               </p>
-              <Button href={`/sign-in?email=${encodeURIComponent(email)}`} variant="primary" size="sm" showArrow style={{ width: '100%' }}>
-                Sign In to Your Account
+              <Button
+                href={`/login?email=${encodeURIComponent(email)}`}
+                variant="primary"
+                size="sm"
+                showArrow
+                style={{ width: '100%' }}
+              >
+                Sign In with this email
               </Button>
             </div>
           )}

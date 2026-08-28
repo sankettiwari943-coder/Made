@@ -134,8 +134,12 @@ export async function signUpAction(formData: {
       };
     }
 
-    // Check if user already existed (Supabase sometimes returns existing user with empty identities)
-    if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+    // Check if user already existed (In Supabase, an empty identities array indicates the email is already registered)
+    const isExistingUser =
+      (data?.user?.identities && Array.isArray(data.user.identities) && data.user.identities.length === 0) ||
+      (Boolean(data?.user) && !data?.session && Boolean(data?.user?.identities) && data?.user?.identities?.length === 0);
+
+    if (isExistingUser) {
       return {
         success: false,
         error: 'An account with this email already exists. Please sign in instead.',

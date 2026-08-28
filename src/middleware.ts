@@ -29,7 +29,13 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/profile') ||
     pathname.startsWith('/settings');
 
-  const isAuthPath = pathname === '/login' || pathname === '/signup';
+  const isAuthPath =
+    pathname === '/login' ||
+    pathname === '/signup' ||
+    pathname === '/join' ||
+    pathname === '/register' ||
+    pathname === '/sign-in' ||
+    pathname === '/auth/sign-up';
 
   // 1. Protected route guard: Redirect unauthenticated requests to /login
   if (isProtectedPath && !user) {
@@ -43,9 +49,9 @@ export async function middleware(request: NextRequest) {
     return redirectResponse;
   }
 
-  // 2. Auth route guard: Redirect already authenticated users away from login/signup
+  // 2. Auth route guard: Redirect already authenticated users away from login/signup/join/register
   if (isAuthPath && user) {
-    const redirectResponse = NextResponse.redirect(new URL('/dashboard', request.url));
+    const redirectResponse = NextResponse.redirect(new URL('/workspace', request.url));
     // Forward any refreshed session cookies to the redirect response
     response.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie.name, cookie.value, cookie);

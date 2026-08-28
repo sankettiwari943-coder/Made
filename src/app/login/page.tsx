@@ -28,6 +28,12 @@ function LoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
+    if (emailParam) {
+      setEmail(emailParam);
+    }
+  }, [emailParam]);
+
+  useEffect(() => {
     if (!isConfigured) return;
     const checkAuth = async () => {
       const supabase = createClient();
