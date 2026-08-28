@@ -60,6 +60,52 @@ export const BuiltByPreview: React.FC = () => {
               ))}
             </div>
 
+            {/* Social Links */}
+            <div style={{ display: 'flex', gap: '16px', margin: '8px 0 16px' }}>
+              <a
+                href={siteConfig.founder.socials.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '4px',
+                }}
+              >
+                LinkedIn ↗
+              </a>
+              <a
+                href={siteConfig.founder.socials.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '4px',
+                }}
+              >
+                GitHub ↗
+              </a>
+              <a
+                href={siteConfig.founder.socials.portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '4px',
+                }}
+              >
+                Portfolio ↗
+              </a>
+            </div>
+
             <div className={styles.actionRow}>
               <Button href="/built-by" variant="primary" size="md" showArrow>
                 Read Founder Story & Vision

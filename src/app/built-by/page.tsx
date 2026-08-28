@@ -137,20 +137,6 @@ export default function BuiltByPage() {
             {/* Social Proof & Links */}
             <div style={{ display: 'flex', gap: 'var(--space-4)', marginTop: 'var(--space-2)' }}>
               <a
-                href={founder.socials.github}
-                target="_blank"
-                rel="noopener noreferrer"
-                style={{
-                  fontFamily: 'var(--font-mono)',
-                  fontSize: '0.75rem',
-                  color: 'var(--text-muted)',
-                  textDecoration: 'underline',
-                  textUnderlineOffset: '4px',
-                }}
-              >
-                GitHub ↗
-              </a>
-              <a
                 href={founder.socials.linkedin}
                 target="_blank"
                 rel="noopener noreferrer"
@@ -163,6 +149,20 @@ export default function BuiltByPage() {
                 }}
               >
                 LinkedIn ↗
+              </a>
+              <a
+                href={founder.socials.github}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  fontFamily: 'var(--font-mono)',
+                  fontSize: '0.75rem',
+                  color: 'var(--text-muted)',
+                  textDecoration: 'underline',
+                  textUnderlineOffset: '4px',
+                }}
+              >
+                GitHub ↗
               </a>
               <a
                 href={founder.socials.portfolio}

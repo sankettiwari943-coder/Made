@@ -124,9 +124,9 @@ export const siteConfig: SiteConfig = {
       "A self-sustaining ecosystem of student engineers, designers, researchers, and creators who learn by shipping real systems.",
     image: "/images/founder/sanket-tiwari.jpg",
     socials: {
-      github: "https://github.com",
-      linkedin: "https://linkedin.com",
-      portfolio: "https://portfolio.example.com",
+      github: "https://github.com/sankettiwari943-coder",
+      linkedin: "https://www.linkedin.com/in/sanket-tiwari2006/",
+      portfolio: "https://portfolio-psi-one-71.vercel.app/",
     },
     selectedWorks: [
       {
