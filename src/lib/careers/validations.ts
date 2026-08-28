@@ -104,6 +104,16 @@ export const CareerApplicationSchema = z.object({
     .optional()
     .or(z.literal('')),
   name: z.string().optional().or(z.literal('')),
+  email: z
+    .string()
+    .email({ message: 'Please enter a valid email address.' })
+    .optional()
+    .or(z.literal('')),
+  applicant_email: z
+    .string()
+    .email({ message: 'Please enter a valid email address.' })
+    .optional()
+    .or(z.literal('')),
   cover_message: z
     .string()
     .min(20, { message: 'Please share a brief introduction (minimum 20 characters).' })
@@ -127,6 +137,31 @@ export const CareerApplicationSchema = z.object({
 
 export type CareerApplicationInput = z.infer<typeof CareerApplicationSchema>;
 
+/**
+ * Format raw application status into a user-facing label
+ */
+export function formatApplicationStatus(status?: string | null): string {
+  if (!status) return 'PENDING';
+  switch (status.toUpperCase()) {
+    case 'SUBMITTED':
+      return 'PENDING';
+    case 'UNDER_REVIEW':
+      return 'REVIEWING';
+    case 'SHORTLISTED':
+      return 'SHORTLISTED';
+    case 'INTERVIEW':
+      return 'INTERVIEW';
+    case 'ACCEPTED':
+      return 'ACCEPTED';
+    case 'REJECTED':
+      return 'DECIDED';
+    case 'WITHDRAWN':
+      return 'WITHDRAWN';
+    default:
+      return status.replace('_', ' ').toUpperCase();
+  }
+}
+
 export const ApplicationNoteSchema = z.object({
   content: z
     .string()
@@ -136,3 +171,4 @@ export const ApplicationNoteSchema = z.object({
 });
 
 export type ApplicationNoteInput = z.infer<typeof ApplicationNoteSchema>;
+

@@ -1,7 +1,9 @@
 import React from 'react';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { getCareerRoleBySlug } from '@/lib/careers/queries';
+import { getCareerRoleBySlug, hasUserAppliedForRole } from '@/lib/careers/queries';
+import { formatApplicationStatus } from '@/lib/careers/validations';
+import { createClient } from '@/lib/supabase/server';
 import { Container } from '@/components/layout/Container';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
@@ -17,6 +19,19 @@ export default async function CareerRoleDetailPage({
     notFound();
   }
 
+  const supabase = createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  let existingApp = null;
+  if (user && role) {
+    const result = await hasUserAppliedForRole(user.id, role.id, user.email);
+    if (result.applied && result.application) {
+      existingApp = result.application;
+    }
+  }
+
   const deadlineFormatted = role.deadline
     ? new Date(role.deadline).toLocaleDateString('en-US', {
         month: 'short',
@@ -24,6 +39,8 @@ export default async function CareerRoleDetailPage({
         year: 'numeric',
       })
     : 'Rolling Applications';
+
+  const statusLabel = existingApp ? formatApplicationStatus(existingApp.status) : null;
 
   return (
     <div style={{ padding: 'var(--space-16) 0 var(--space-28)' }}>
@@ -42,6 +59,40 @@ export default async function CareerRoleDetailPage({
             ← All Open Roles
           </Link>
         </div>
+
+        {/* Existing Application Banner */}
+        {existingApp && (
+          <div
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.03)',
+              border: '1px solid var(--accent-primary)',
+              borderRadius: 'var(--radius-xs)',
+              padding: 'var(--space-4) var(--space-6)',
+              marginBottom: 'var(--space-8)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 'var(--space-4)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
+              <span className="technical-label" style={{ color: 'var(--accent-primary-hover)' }}>
+                [ APPLICATION ON FILE ]
+              </span>
+              <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
+                You have already submitted an application for this role. Status:{' '}
+                <strong style={{ color: 'var(--accent-primary-hover)' }}>
+                  [{statusLabel}]
+                </strong>
+              </span>
+            </div>
+
+            <Button href={`/dashboard/applications/${existingApp.id}`} variant="outline" size="sm">
+              View Submission Status →
+            </Button>
+          </div>
+        )}
 
         {/* Role Header */}
         <div style={{ marginBottom: 'var(--space-16)' }}>
@@ -83,9 +134,15 @@ export default async function CareerRoleDetailPage({
 
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', marginTop: 'var(--space-8)' }}>
             {role.status === 'OPEN' ? (
-              <Button href={`/careers/${role.slug}/apply`} variant="primary" size="lg" showArrow>
-                APPLY FOR THIS ROLE
-              </Button>
+              existingApp ? (
+                <Button href={`/dashboard/applications/${existingApp.id}`} variant="outline" size="lg" showArrow>
+                  VIEW SUBMISSION STATUS
+                </Button>
+              ) : (
+                <Button href={`/careers/${role.slug}/apply`} variant="primary" size="lg" showArrow>
+                  APPLY FOR THIS ROLE
+                </Button>
+              )
             ) : (
               <Badge variant="default" useBrackets>
                 APPLICATIONS CLOSED
@@ -189,9 +246,15 @@ export default async function CareerRoleDetailPage({
           {/* Bottom Application Action */}
           {role.status === 'OPEN' && (
             <div style={{ marginTop: 'var(--space-4)', textAlign: 'center', padding: 'var(--space-8) 0', borderTop: '1px solid var(--border-subtle)' }}>
-              <Button href={`/careers/${role.slug}/apply`} variant="primary" size="lg" showArrow>
-                SUBMIT APPLICATION FOR {role.title.toUpperCase()}
-              </Button>
+              {existingApp ? (
+                <Button href={`/dashboard/applications/${existingApp.id}`} variant="outline" size="lg" showArrow>
+                  VIEW SUBMISSION STATUS (#{existingApp.reference_code})
+                </Button>
+              ) : (
+                <Button href={`/careers/${role.slug}/apply`} variant="primary" size="lg" showArrow>
+                  SUBMIT APPLICATION FOR {role.title.toUpperCase()}
+                </Button>
+              )}
             </div>
           )}
         </div>
@@ -199,3 +262,4 @@ export default async function CareerRoleDetailPage({
     </div>
   );
 }
+

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, Suspense } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
@@ -17,14 +17,29 @@ function LoginForm() {
   const searchParams = useSearchParams();
   const nextParam = searchParams.get('next') || '/dashboard';
   const urlError = searchParams.get('error');
+  const emailParam = searchParams.get('email') || '';
 
   const { isConfigured } = getSupabaseEnv();
 
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState(emailParam);
   const [password, setPassword] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(urlError);
   const [isLoading, setIsLoading] = useState(false);
+
+  useEffect(() => {
+    if (!isConfigured) return;
+    const checkAuth = async () => {
+      const supabase = createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (user) {
+        router.replace(nextParam.startsWith('/') ? nextParam : '/workspace');
+      }
+    };
+    checkAuth();
+  }, [isConfigured, nextParam, router]);
 
   if (!isConfigured) {
     return <SystemConfigRequired />;

@@ -163,17 +163,15 @@ export const Navbar: React.FC = () => {
                   </Link>
                 )}
 
-                {/* Workspace / Dashboard Link */}
-                <Link
-                  href="/dashboard"
-                  className={clsx(
-                    styles.workspaceBtn,
-                    pathname.startsWith('/dashboard') && styles.workspaceBtnActive
-                  )}
+                {/* Workspace / Dashboard CTA */}
+                <Button
+                  href="/workspace"
+                  variant="primary"
+                  size="sm"
+                  showArrow
                 >
-                  <LayoutDashboard size={15} />
-                  <span>Workspace</span>
-                </Link>
+                  WORKSPACE
+                </Button>
 
                 {/* User Dropdown Trigger */}
                 <div className={styles.userMenuContainer} ref={dropdownRef}>
@@ -402,10 +400,10 @@ export const Navbar: React.FC = () => {
 
                 <div className={styles.mobileUserLinks}>
                   <Link
-                    href="/dashboard"
+                    href="/workspace"
                     className={clsx(
                       styles.mobileSubLink,
-                      pathname.startsWith('/dashboard') && styles.active
+                      (pathname.startsWith('/dashboard') || pathname.startsWith('/workspace')) && styles.active
                     )}
                     onClick={closeMobile}
                   >

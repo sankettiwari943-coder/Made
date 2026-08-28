@@ -50,18 +50,36 @@ export async function getCareerRoleBySlug(slug: string): Promise<CareerRole | nu
 }
 
 /**
- * Check if a user has already submitted an active application for a specific role
+ * Check if a user or email has already submitted an application for a specific role
  */
-export async function hasUserAppliedForRole(userId: string, roleId: string): Promise<{ applied: boolean; application?: CareerApplication }> {
+export async function hasUserAppliedForRole(
+  userId?: string | null,
+  roleId?: string,
+  email?: string | null
+): Promise<{ applied: boolean; application?: CareerApplication }> {
+  if (!roleId || (!userId && !email)) {
+    return { applied: false };
+  }
+
   const supabase = createClient();
 
   try {
-    const { data, error } = await supabase
+    let query = supabase
       .from('career_applications')
       .select('*, role:career_roles(*)')
-      .eq('applicant_id', userId)
-      .eq('role_id', roleId)
-      .maybeSingle();
+      .eq('role_id', roleId);
+
+    if (userId && email) {
+      const cleanEmail = email.trim().toLowerCase();
+      query = query.or(`applicant_id.eq.${userId},email.eq.${cleanEmail},applicant_email.eq.${cleanEmail},user_email.eq.${cleanEmail},contact_email.eq.${cleanEmail}`);
+    } else if (userId) {
+      query = query.eq('applicant_id', userId);
+    } else if (email) {
+      const cleanEmail = email.trim().toLowerCase();
+      query = query.or(`email.eq.${cleanEmail},applicant_email.eq.${cleanEmail},user_email.eq.${cleanEmail},contact_email.eq.${cleanEmail}`);
+    }
+
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(1).maybeSingle();
 
     if (error || !data) {
       return { applied: false };
@@ -72,6 +90,23 @@ export async function hasUserAppliedForRole(userId: string, roleId: string): Pro
     return { applied: false };
   }
 }
+
+/**
+ * Direct check for active application by role and user/email
+ */
+export async function checkExistingCareerApplication({
+  roleId,
+  userId,
+  email,
+}: {
+  roleId: string;
+  userId?: string | null;
+  email?: string | null;
+}): Promise<{ exists: boolean; application?: CareerApplication | null }> {
+  const result = await hasUserAppliedForRole(userId, roleId, email);
+  return { exists: result.applied, application: result.application || null };
+}
+
 
 /**
  * Fetch all applications submitted by an applicant

@@ -1,11 +1,12 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 import { SignUpSchema } from '@/lib/auth/validations';
+import { signUpAction, checkEmailExistsAction } from '@/lib/auth/actions';
 import { Container } from '@/components/layout/Container';
 import { Logo } from '@/components/brand/Logo';
 import { Input } from '@/components/ui/Input';
@@ -23,16 +24,69 @@ export default function SignUpPage() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [generalError, setGeneralError] = useState<string | null>(null);
+  const [accountExists, setAccountExists] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isCheckingAuth, setIsCheckingAuth] = useState(true);
+
+  // 1. Navigation & Route Guard: Redirect already authenticated users to workspace / dashboard
+  useEffect(() => {
+    if (!isConfigured) {
+      setIsCheckingAuth(false);
+      return;
+    }
+
+    const checkExistingAuth = async () => {
+      try {
+        const supabase = createClient();
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+
+        if (user) {
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('id, onboarding_completed')
+            .eq('id', user.id)
+            .maybeSingle();
+
+          if (profile && profile.onboarding_completed) {
+            router.replace('/workspace');
+            return;
+          } else if (profile) {
+            router.replace('/workspace');
+            return;
+          } else {
+            router.replace('/onboarding');
+            return;
+          }
+        }
+      } catch {
+        // Continue to sign up form if session check fails
+      } finally {
+        setIsCheckingAuth(false);
+      }
+    };
+
+    checkExistingAuth();
+  }, [isConfigured, router]);
 
   if (!isConfigured) {
     return <SystemConfigRequired />;
+  }
+
+  if (isCheckingAuth) {
+    return (
+      <div style={{ padding: 'var(--space-24) 0', textAlign: 'center', minHeight: '75vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <span className="technical-label">VERIFYING MEMBERSHIP CREDENTIALS...</span>
+      </div>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     setGeneralError(null);
+    setAccountExists(false);
 
     // Validate inputs with Zod
     const validationResult = SignUpSchema.safeParse({
@@ -54,38 +108,43 @@ export default function SignUpPage() {
     }
 
     setIsLoading(true);
-    const supabase = createClient();
 
     try {
+      // 2. Pre-check email existence via Server Action
+      const { exists } = await checkEmailExistsAction(email);
+      if (exists) {
+        setAccountExists(true);
+        setGeneralError('An account with this email already exists. Please sign in instead.');
+        setIsLoading(false);
+        return;
+      }
+
+      // 3. Execute Server Action Registration Guard
       const origin = window.location.origin;
-      const { data, error } = await supabase.auth.signUp({
-        email,
+      const result = await signUpAction({
+        fullName: fullName.trim(),
+        email: email.trim().toLowerCase(),
         password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-          },
-          emailRedirectTo: `${origin}/auth/callback`,
-        },
+        confirmPassword,
+        origin,
       });
 
-      if (error) {
-        if (error.message.includes('User already registered')) {
-          setGeneralError('An account with this email address already exists. Please sign in instead.');
-        } else if (error.message.includes('Password should be')) {
-          setGeneralError('Password does not meet the security criteria. Please use at least 8 characters with numbers and uppercase.');
+      if (!result.success) {
+        if (result.code === 'ACCOUNT_EXISTS') {
+          setAccountExists(true);
+          setGeneralError('An account with this email already exists. Please sign in instead.');
         } else {
-          setGeneralError(error.message);
+          setGeneralError(result.error || 'Failed to create account.');
         }
         setIsLoading(false);
         return;
       }
 
       // Check if user is created and verification is needed
-      if (data.user) {
+      if (result.user) {
         router.push(`/verify-email?email=${encodeURIComponent(email)}`);
       }
-    } catch (err: any) {
+    } catch {
       setGeneralError('A network error occurred while connecting to authentication services.');
     } finally {
       setIsLoading(false);
@@ -125,7 +184,32 @@ export default function SignUpPage() {
             </p>
           </div>
 
-          {generalError && (
+          {/* Account Exists Friendly Notice & Sign In CTA */}
+          {accountExists && (
+            <div
+              style={{
+                backgroundColor: 'rgba(255, 255, 255, 0.03)',
+                border: '1px solid var(--accent-primary)',
+                borderRadius: 'var(--radius-xs)',
+                padding: 'var(--space-4)',
+                marginBottom: 'var(--space-6)',
+              }}
+            >
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-2)' }}>
+                <span className="technical-label" style={{ color: 'var(--accent-primary-hover)' }}>
+                  [ ACCOUNT REGISTERED ]
+                </span>
+              </div>
+              <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)', marginBottom: 'var(--space-3)' }}>
+                An account with this email already exists. Please sign in instead.
+              </p>
+              <Button href={`/sign-in?email=${encodeURIComponent(email)}`} variant="primary" size="sm" showArrow style={{ width: '100%' }}>
+                Sign In to Your Account
+              </Button>
+            </div>
+          )}
+
+          {generalError && !accountExists && (
             <div
               style={{
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -160,7 +244,10 @@ export default function SignUpPage() {
               type="email"
               placeholder="builder@university.edu"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => {
+                setEmail(e.target.value);
+                if (accountExists) setAccountExists(false);
+              }}
               error={errors.email}
               required
               disabled={isLoading}
@@ -209,7 +296,7 @@ export default function SignUpPage() {
           >
             <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>
               Already registered?{' '}
-              <Link href="/login" style={{ color: 'var(--text-primary)', fontWeight: 600, textDecoration: 'underline' }}>
+              <Link href="/sign-in" style={{ color: 'var(--text-primary)', fontWeight: 600, textDecoration: 'underline' }}>
                 Sign In
               </Link>
             </span>
@@ -219,3 +306,4 @@ export default function SignUpPage() {
     </div>
   );
 }
+
