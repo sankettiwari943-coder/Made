@@ -26,9 +26,17 @@ export default async function CareerRoleDetailPage({
 
   let existingApp = null;
   if (user && role) {
-    const result = await hasUserAppliedForRole(user.id, role.id, user.email);
-    if (result.applied && result.application) {
-      existingApp = result.application;
+    const { data } = await supabase
+      .from('career_applications')
+      .select('id, status, created_at, role_title, reference_code')
+      .eq('role_id', role.id)
+      .or(`applicant_id.eq.${user.id},email.eq.${user.email}`)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (data) {
+      existingApp = data;
     }
   }
 
@@ -135,9 +143,14 @@ export default async function CareerRoleDetailPage({
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)', marginTop: 'var(--space-8)' }}>
             {role.status === 'OPEN' ? (
               existingApp ? (
-                <Button href={`/dashboard/applications/${existingApp.id}`} variant="outline" size="lg" showArrow>
-                  VIEW SUBMISSION STATUS
-                </Button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+                  <Button disabled variant="outline" size="lg" style={{ opacity: 0.75, cursor: 'not-allowed' }}>
+                    Application Submitted ✓
+                  </Button>
+                  <Button href={`/dashboard/applications/${existingApp.id}`} variant="outline" size="lg">
+                    VIEW SUBMISSION STATUS
+                  </Button>
+                </div>
               ) : (
                 <Button href={`/careers/${role.slug}/apply`} variant="primary" size="lg" showArrow>
                   APPLY FOR THIS ROLE
@@ -247,9 +260,14 @@ export default async function CareerRoleDetailPage({
           {role.status === 'OPEN' && (
             <div style={{ marginTop: 'var(--space-4)', textAlign: 'center', padding: 'var(--space-8) 0', borderTop: '1px solid var(--border-subtle)' }}>
               {existingApp ? (
-                <Button href={`/dashboard/applications/${existingApp.id}`} variant="outline" size="lg" showArrow>
-                  VIEW SUBMISSION STATUS (#{existingApp.reference_code})
-                </Button>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 'var(--space-4)', flexWrap: 'wrap', justifyContent: 'center' }}>
+                  <Button disabled variant="outline" size="lg" style={{ opacity: 0.75, cursor: 'not-allowed' }}>
+                    Application Submitted ✓
+                  </Button>
+                  <Button href={`/dashboard/applications/${existingApp.id}`} variant="outline" size="lg">
+                    VIEW SUBMISSION STATUS
+                  </Button>
+                </div>
               ) : (
                 <Button href={`/careers/${role.slug}/apply`} variant="primary" size="lg" showArrow>
                   SUBMIT APPLICATION FOR {role.title.toUpperCase()}

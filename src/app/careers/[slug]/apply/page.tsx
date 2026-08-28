@@ -1,19 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { getSupabaseEnv } from '@/lib/supabase/env';
 import { CareerRole, Profile } from '@/lib/supabase/types';
-import { CareerApplicationSchema, formatApplicationStatus } from '@/lib/careers/validations';
-import { submitCareerApplicationAction, checkExistingCareerApplicationAction } from '@/lib/careers/actions';
+import { CareerApplicationSchema } from '@/lib/careers/validations';
+import { submitCareerApplicationAction } from '@/lib/careers/actions';
 import { Container } from '@/components/layout/Container';
 import { Input } from '@/components/ui/Input';
 import { Textarea } from '@/components/ui/Textarea';
 import { Button } from '@/components/ui/Button';
-import { Badge } from '@/components/ui/Badge';
 import { SystemConfigRequired } from '@/components/auth/SystemConfigRequired';
+
+export interface ExistingApplicationRecord {
+  id: string;
+  status: string;
+  created_at: string;
+  role_title?: string;
+  reference_code?: string;
+}
 
 export default function CareerApplyPage({
   params,
@@ -29,11 +36,7 @@ export default function CareerApplyPage({
   const [isLoading, setIsLoading] = useState(true);
 
   // Existing application state
-  const [alreadyApplied, setAlreadyApplied] = useState(false);
-  const [existingAppId, setExistingAppId] = useState<string | null>(null);
-  const [existingStatus, setExistingStatus] = useState<string | null>(null);
-  const [existingRefCode, setExistingRefCode] = useState<string | null>(null);
-  const [isCheckingDuplicate, setIsCheckingDuplicate] = useState(false);
+  const [existingApp, setExistingApp] = useState<ExistingApplicationRecord | null>(null);
 
   // Form Fields
   const [fullName, setFullName] = useState('');
@@ -52,29 +55,6 @@ export default function CareerApplyPage({
   const [generalError, setGeneralError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submittedRef, setSubmittedRef] = useState<string | null>(null);
-
-  // Check duplicate application helper
-  const performDuplicateCheck = useCallback(
-    async (roleId: string, candidateEmail?: string) => {
-      if (!roleId) return;
-      setIsCheckingDuplicate(true);
-
-      const result = await checkExistingCareerApplicationAction(roleId, candidateEmail);
-      if (result.exists && result.application) {
-        setAlreadyApplied(true);
-        setExistingAppId(result.application.id);
-        setExistingStatus(result.application.status);
-        setExistingRefCode(result.application.reference_code);
-      } else {
-        setAlreadyApplied(false);
-        setExistingAppId(null);
-        setExistingStatus(null);
-        setExistingRefCode(null);
-      }
-      setIsCheckingDuplicate(false);
-    },
-    []
-  );
 
   useEffect(() => {
     if (!isConfigured) {
@@ -123,27 +103,25 @@ export default function CareerApplyPage({
       const currentRole = (roleData as CareerRole) || null;
       setRole(currentRole);
 
-      // 3. Pre-Submission Check
-      if (currentRole) {
-        await performDuplicateCheck(currentRole.id, profileData?.email || userEmail);
+      // 3. Query existing application record
+      if (currentRole && user) {
+        const { data: existingRecord } = await supabase
+          .from('career_applications')
+          .select('id, status, created_at, role_title, reference_code')
+          .eq('role_id', currentRole.id)
+          .or(`applicant_id.eq.${user.id},email.eq.${user.email}`)
+          .maybeSingle();
+
+        if (existingRecord) {
+          setExistingApp(existingRecord as ExistingApplicationRecord);
+        }
       }
 
       setIsLoading(false);
     };
 
     init();
-  }, [isConfigured, params.slug, router, performDuplicateCheck]);
-
-  // Debounced email duplicate check when email input changes
-  useEffect(() => {
-    if (!role || !email || !email.includes('@') || isLoading) return;
-
-    const timer = setTimeout(() => {
-      performDuplicateCheck(role.id, email);
-    }, 600);
-
-    return () => clearTimeout(timer);
-  }, [email, role, isLoading, performDuplicateCheck]);
+  }, [isConfigured, params.slug, router]);
 
   if (!isConfigured) {
     return <SystemConfigRequired />;
@@ -171,6 +149,223 @@ export default function CareerApplyPage({
             <Button href="/careers" variant="primary" size="sm">
               ← Return to Open Roles
             </Button>
+          </div>
+        </Container>
+      </div>
+    );
+  }
+
+  // 1. Render Locked Dossier View if Application Already Exists
+  if (existingApp) {
+    const formattedDate = existingApp.created_at
+      ? new Date(existingApp.created_at).toLocaleDateString('en-US', {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        })
+      : 'Submitted';
+
+    return (
+      <div style={{ padding: 'var(--space-12) 0 var(--space-28)' }}>
+        <Container size="narrow">
+          {/* Top Breadcrumb */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 'var(--space-8)',
+              borderBottom: '1px solid var(--border-subtle)',
+              paddingBottom: 'var(--space-4)',
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Link href={`/careers/${role.slug}`} className="technical-label" style={{ color: 'var(--text-muted)' }}>
+                {role.title.toUpperCase()}
+              </Link>
+              <span style={{ color: 'var(--border-regular)' }}>//</span>
+              <span className="technical-label">APPLICATION DOSSIER</span>
+            </div>
+
+            <Link
+              href="/careers"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.75rem',
+                color: 'var(--text-primary)',
+                textDecoration: 'underline',
+              }}
+            >
+              ← Return to Careers
+            </Link>
+          </div>
+
+          {/* Locked Dossier Confirmation Card */}
+          <div
+            style={{
+              backgroundColor: 'var(--bg-surface)',
+              border: '1px solid var(--border-technical)',
+              borderRadius: 'var(--radius-xs)',
+              padding: 'var(--space-10) var(--space-8)',
+            }}
+          >
+            {/* Header */}
+            <div style={{ marginBottom: 'var(--space-6)' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: 'var(--space-2)' }}>
+                <span
+                  className="technical-label"
+                  style={{
+                    color: 'var(--accent-primary-hover)',
+                    letterSpacing: '0.08em',
+                  }}
+                >
+                  [ APPLICATION ALREADY SUBMITTED ]
+                </span>
+              </div>
+              <h1
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontSize: 'clamp(1.75rem, 4vw, 2.25rem)',
+                  fontWeight: 700,
+                  textTransform: 'uppercase',
+                  letterSpacing: '-0.02em',
+                  color: 'var(--text-primary)',
+                  marginTop: 'var(--space-2)',
+                }}
+              >
+                {role.title}
+              </h1>
+            </div>
+
+            {/* Dossier Meta Details */}
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+                gap: 'var(--space-4)',
+                padding: 'var(--space-6)',
+                backgroundColor: 'var(--bg-canvas)',
+                border: '1px solid var(--border-technical)',
+                borderRadius: 'var(--radius-xs)',
+                marginBottom: 'var(--space-6)',
+              }}
+            >
+              <div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.6875rem',
+                    color: 'var(--text-dim)',
+                    textTransform: 'uppercase',
+                    display: 'block',
+                    marginBottom: '6px',
+                  }}
+                >
+                  STATUS
+                </span>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.875rem',
+                    fontWeight: 700,
+                    color: 'var(--accent-primary-hover)',
+                    letterSpacing: '0.04em',
+                    display: 'inline-block',
+                    padding: '2px 8px',
+                    backgroundColor: 'rgba(255, 255, 255, 0.05)',
+                    border: '1px solid var(--border-technical)',
+                  }}
+                >
+                  {existingApp.status || 'SUBMITTED'}
+                </span>
+              </div>
+
+              <div>
+                <span
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.6875rem',
+                    color: 'var(--text-dim)',
+                    textTransform: 'uppercase',
+                    display: 'block',
+                    marginBottom: '6px',
+                  }}
+                >
+                  SUBMITTED ON
+                </span>
+                <p
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.875rem',
+                    color: 'var(--text-primary)',
+                    fontWeight: 600,
+                    margin: 0,
+                  }}
+                >
+                  {formattedDate}
+                </p>
+              </div>
+
+              {existingApp.reference_code && (
+                <div>
+                  <span
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.6875rem',
+                      color: 'var(--text-dim)',
+                      textTransform: 'uppercase',
+                      display: 'block',
+                      marginBottom: '6px',
+                    }}
+                  >
+                    REFERENCE CODE
+                  </span>
+                  <p
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.875rem',
+                      color: 'var(--text-primary)',
+                      fontWeight: 700,
+                      margin: 0,
+                    }}
+                  >
+                    #{existingApp.reference_code}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Explanatory Message */}
+            <p
+              style={{
+                fontSize: '0.9375rem',
+                lineHeight: 1.6,
+                color: 'var(--text-secondary)',
+                marginBottom: 'var(--space-8)',
+              }}
+            >
+              You have already submitted an application for this position. Our review team is evaluating your submission.
+            </p>
+
+            {/* Actions */}
+            <div
+              style={{
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: 'var(--space-4)',
+                borderTop: '1px solid var(--border-subtle)',
+                paddingTop: 'var(--space-6)',
+              }}
+            >
+              <Button href="/careers" variant="outline" size="md">
+                Return to Careers
+              </Button>
+              <Button href="/workspace" variant="primary" size="md" showArrow>
+                Go to Workspace
+              </Button>
+            </div>
           </div>
         </Container>
       </div>
@@ -259,7 +454,7 @@ export default function CareerApplyPage({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (alreadyApplied) return;
+    if (existingApp) return;
 
     setErrors({});
     setGeneralError(null);
@@ -328,13 +523,13 @@ export default function CareerApplyPage({
 
       if (!result.success) {
         if (result.code === 'ALREADY_APPLIED' || result.status === 409) {
-          setAlreadyApplied(true);
-          if (result.existingApplicationId) {
-            setExistingAppId(result.existingApplicationId);
-          }
-          if (result.existingStatus) {
-            setExistingStatus(result.existingStatus);
-          }
+          setExistingApp({
+            id: result.existingApplicationId || '',
+            status: result.existingStatus || 'SUBMITTED',
+            created_at: new Date().toISOString(),
+            role_title: role.title,
+            reference_code: result.referenceCode,
+          });
           setGeneralError('You have already applied for this role.');
         } else {
           setGeneralError(result.error || 'Failed to submit application.');
@@ -349,9 +544,6 @@ export default function CareerApplyPage({
       setIsSubmitting(false);
     }
   };
-
-  const formattedStatus = formatApplicationStatus(existingStatus);
-
 
   return (
     <div style={{ padding: 'var(--space-12) 0 var(--space-28)' }}>
@@ -401,43 +593,7 @@ export default function CareerApplyPage({
             </p>
           </div>
 
-          {/* Informative Banner when Application Already Exists */}
-          {alreadyApplied && (
-            <div
-              style={{
-                backgroundColor: 'rgba(255, 255, 255, 0.03)',
-                border: '1px solid var(--accent-primary)',
-                borderRadius: 'var(--radius-xs)',
-                padding: 'var(--space-4) var(--space-6)',
-                marginBottom: 'var(--space-8)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: 'var(--space-4)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-3)' }}>
-                <span className="technical-label" style={{ color: 'var(--accent-primary-hover)' }}>
-                  [ APPLICATION ON FILE ]
-                </span>
-                <span style={{ fontSize: '0.875rem', color: 'var(--text-primary)', fontFamily: 'var(--font-mono)' }}>
-                  You have already submitted an application for this role. Status:{' '}
-                  <strong style={{ color: 'var(--accent-primary-hover)' }}>
-                    [{formattedStatus}]
-                  </strong>
-                </span>
-              </div>
-
-              {existingAppId && (
-                <Button href={`/dashboard/applications/${existingAppId}`} variant="outline" size="sm">
-                  View Submission Status →
-                </Button>
-              )}
-            </div>
-          )}
-
-          {generalError && !alreadyApplied && (
+          {generalError && (
             <div
               style={{
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
@@ -467,7 +623,6 @@ export default function CareerApplyPage({
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   error={errors.full_name || errors.name}
-                  disabled={alreadyApplied}
                   required
                 />
                 <Input
@@ -477,7 +632,6 @@ export default function CareerApplyPage({
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   error={errors.email || errors.applicant_email}
-                  disabled={alreadyApplied}
                   required
                 />
                 <div>
@@ -504,7 +658,6 @@ export default function CareerApplyPage({
                 value={whatTheyBuild}
                 onChange={(e) => setWhatTheyBuild(e.target.value)}
                 error={errors.what_they_build}
-                disabled={alreadyApplied}
                 required
               />
             </div>
@@ -522,7 +675,6 @@ export default function CareerApplyPage({
                   value={experience}
                   onChange={(e) => setExperience(e.target.value)}
                   error={errors.experience}
-                  disabled={alreadyApplied}
                   required
                 />
 
@@ -533,7 +685,6 @@ export default function CareerApplyPage({
                     value={githubUrl}
                     onChange={(e) => setGithubUrl(e.target.value)}
                     error={errors.github_url}
-                    disabled={alreadyApplied}
                   />
                   <Input
                     label="LinkedIn Profile URL (Optional)"
@@ -541,7 +692,6 @@ export default function CareerApplyPage({
                     value={linkedinUrl}
                     onChange={(e) => setLinkedinUrl(e.target.value)}
                     error={errors.linkedin_url}
-                    disabled={alreadyApplied}
                   />
                   <Input
                     label="Portfolio / Website URL (Optional)"
@@ -549,7 +699,6 @@ export default function CareerApplyPage({
                     value={portfolioUrl}
                     onChange={(e) => setPortfolioUrl(e.target.value)}
                     error={errors.portfolio_url}
-                    disabled={alreadyApplied}
                   />
                 </div>
 
@@ -562,7 +711,6 @@ export default function CareerApplyPage({
                     type="file"
                     accept=".pdf,.doc,.docx,application/pdf"
                     onChange={handleResumeChange}
-                    disabled={alreadyApplied}
                     style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-muted)' }}
                   />
                   {errors.resume && (
@@ -585,7 +733,6 @@ export default function CareerApplyPage({
                 value={coverMessage}
                 onChange={(e) => setCoverMessage(e.target.value)}
                 error={errors.cover_message}
-                disabled={alreadyApplied}
                 required
               />
             </div>
@@ -599,45 +746,18 @@ export default function CareerApplyPage({
                 placeholder="Anything else you would like the team to know?"
                 value={additionalInfo}
                 onChange={(e) => setAdditionalInfo(e.target.value)}
-                disabled={alreadyApplied}
               />
             </div>
 
-            {alreadyApplied ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)', alignItems: 'flex-start' }}>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--space-4)' }}>
-                  {existingAppId ? (
-                    <Button href={`/dashboard/applications/${existingAppId}`} variant="primary" size="lg" showArrow>
-                      VIEW SUBMISSION STATUS
-                    </Button>
-                  ) : (
-                    <Button href="/dashboard/applications" variant="primary" size="lg" showArrow>
-                      VIEW YOUR APPLICATIONS
-                    </Button>
-                  )}
-                  <Button href="/careers" variant="outline" size="lg">
-                    EXPLORE OTHER ROLES
-                  </Button>
-                </div>
-                <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-dim)' }}>
-                  Submission disabled: You already have an active dossier for this position ({existingRefCode ? `#${existingRefCode}` : 'on file'}).
-                </span>
-              </div>
-            ) : (
-              <Button
-                variant="primary"
-                size="lg"
-                disabled={isSubmitting || isCheckingDuplicate}
-                showArrow
-                style={{ alignSelf: 'flex-start' }}
-              >
-                {isSubmitting
-                  ? 'TRANSMITTING APPLICATION...'
-                  : isCheckingDuplicate
-                  ? 'CHECKING ELIGIBILITY...'
-                  : 'SUBMIT APPLICATION'}
-              </Button>
-            )}
+            <Button
+              variant="primary"
+              size="lg"
+              disabled={isSubmitting}
+              showArrow
+              style={{ alignSelf: 'flex-start' }}
+            >
+              {isSubmitting ? 'TRANSMITTING APPLICATION...' : 'SUBMIT APPLICATION'}
+            </Button>
           </form>
         </div>
       </Container>
