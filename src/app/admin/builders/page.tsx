@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { requireSuperAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin, isPrimarySuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { Profile } from '@/lib/supabase/types';
 import { Badge } from '@/components/ui/Badge';
@@ -9,7 +9,7 @@ import { BuilderRoleSelect } from './BuilderRoleSelect';
 
 export default async function AdminBuildersPage() {
   const currentProfile = await requireSuperAdmin();
-  const isSuperAdmin = currentProfile?.role === 'super_admin' || currentProfile?.role === 'SUPER_ADMIN';
+  const canManageRoles = isPrimarySuperAdmin(currentProfile);
   const supabase = createClient();
 
   let builders: Profile[] = [];
@@ -115,7 +115,8 @@ export default async function AdminBuildersPage() {
                   userId={builder.id}
                   currentRole={builder.role}
                   builderName={builder.full_name || builder.username || 'Builder'}
-                  isSuperAdmin={isSuperAdmin}
+                  isSuperAdmin={canManageRoles}
+                  currentUser={currentProfile}
                   currentProfile={currentProfile}
                 />
 

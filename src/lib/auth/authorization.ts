@@ -200,6 +200,8 @@ export const superAdminEmails = [
   'apurvadwivedi666@outlook.com',
 ];
 
+export const isPrimarySuperAdmin = (user: any) => user?.email === 'sankettiwari943@gmail.com';
+
 /**
  * Super Admin check:
  * Returns true if profile role is super_admin / SUPER_ADMIN or user is a designated super admin.

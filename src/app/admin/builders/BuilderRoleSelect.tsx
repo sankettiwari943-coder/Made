@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { UserRole, Profile } from '@/lib/supabase/types';
 import { createClient } from '@/lib/supabase/client';
+import { isPrimarySuperAdmin } from '@/lib/auth/authorization';
 import { Badge } from '@/components/ui/Badge';
 
 interface BuilderRoleSelectProps {
@@ -10,6 +11,7 @@ interface BuilderRoleSelectProps {
   currentRole: UserRole | string;
   builderName: string;
   isSuperAdmin?: boolean;
+  currentUser?: any;
   currentProfile?: Profile | null;
 }
 
@@ -18,18 +20,17 @@ export function BuilderRoleSelect({
   currentRole,
   builderName,
   isSuperAdmin: isSuperAdminProp,
+  currentUser,
   currentProfile,
 }: BuilderRoleSelectProps) {
   const [role, setRole] = useState<string>(currentRole || 'builder');
   const [isPending, setIsPending] = useState<boolean>(false);
 
-  // 1. Role Guard: Identify the current logged-in profile role
-  const isSuperAdmin =
-    currentProfile !== undefined
-      ? currentProfile?.role === 'super_admin' || currentProfile?.role === 'SUPER_ADMIN'
-      : (isSuperAdminProp ?? false);
+  // 1. Primary Super Admin Check: Only primary super admin (sankettiwari943@gmail.com) can modify roles
+  const activeUser = currentUser || currentProfile;
+  const isSuperAdmin = activeUser ? isPrimarySuperAdmin(activeUser) : (isSuperAdminProp ?? false);
 
-  // If isSuperAdmin is false (regular Admin or Viewer): Render as static, disabled badge
+  // If isSuperAdmin is false (regular Admin or Viewer): Render as static, disabled badge with zero modification controls
   if (!isSuperAdmin) {
     const rawRole = (role || currentRole || 'builder').toString();
     const displayRole =
@@ -51,7 +52,7 @@ export function BuilderRoleSelect({
     );
   }
 
-  // 2. Role Update Handler calling update_user_role RPC function
+  // 2. Role Update Handler calling update_user_role RPC function with error catching
   const handleRoleChange = async (targetUserId: string, newRole: string) => {
     if (newRole === 'super_admin') {
       const confirmTransfer = confirm(
@@ -61,18 +62,23 @@ export function BuilderRoleSelect({
     }
 
     setIsPending(true);
-    const supabase = createClient();
-    const { data, error } = await supabase.rpc('update_user_role', {
-      target_user_id: targetUserId,
-      new_role: newRole,
-    });
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase.rpc('update_user_role', {
+        target_user_id: targetUserId,
+        new_role: newRole,
+      });
 
-    if (error) {
-      alert(`Error: ${error.message}`);
+      if (error) {
+        alert(`Error: ${error.message}`);
+        setIsPending(false);
+      } else {
+        setRole(newRole);
+        window.location.reload();
+      }
+    } catch (err: any) {
+      alert(`Error: ${err?.message || 'Unauthorized or failed to update role'}`);
       setIsPending(false);
-    } else {
-      setRole(newRole);
-      window.location.reload();
     }
   };
 

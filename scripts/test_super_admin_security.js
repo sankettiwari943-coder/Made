@@ -35,7 +35,7 @@ async function runTests() {
   console.log('[TEST 1] isSuperAdmin & isAdmin Multi-Identity Verification');
   assert('authorization.ts defines isSuperAdmin', authFile.includes('export const isSuperAdmin ='));
   assert('authorization.ts defines isAdmin', authFile.includes('export const isAdmin ='));
-  assert('authorization.ts defines superAdminEmails', authFile.includes('superAdminEmails'));
+  assert('authorization.ts defines isPrimarySuperAdmin', authFile.includes('export const isPrimarySuperAdmin ='));
   assert('superAdminEmails includes sankettiwari943@gmail.com', authFile.includes('sankettiwari943@gmail.com'));
   assert('superAdminEmails includes apurvadwivedi666@outlook.com', authFile.includes('apurvadwivedi666@outlook.com'));
 
