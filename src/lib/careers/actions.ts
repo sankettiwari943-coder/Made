@@ -31,20 +31,20 @@ export interface CheckExistingApplicationResult {
  */
 export async function submitCareerApplicationAction(formData: {
   role_id: string;
-  full_name?: string;
-  name?: string;
-  email?: string;
-  applicant_email?: string;
-  applicant_id?: string;
-  user_id?: string;
+  full_name?: string | null;
+  name?: string | null;
+  email?: string | null;
+  applicant_email?: string | null;
+  applicant_id?: string | null;
+  user_id?: string | null;
   cover_message: string;
   what_they_build: string;
   experience: string;
-  github_url?: string;
-  linkedin_url?: string;
-  portfolio_url?: string;
+  github_url?: string | null;
+  linkedin_url?: string | null;
+  portfolio_url?: string | null;
   resume_path?: string | null;
-  additional_information?: string;
+  additional_information?: string | null;
 }): Promise<SubmitApplicationResult> {
   try {
     const supabase = createClient();

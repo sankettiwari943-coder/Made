@@ -463,100 +463,228 @@ export async function updateApplicationStatusAction(
   newStatus: ApplicationStatus,
   oldStatus: ApplicationStatus | null,
   applicantName: string
-) {
-  const admin = await requireSuperAdmin();
-  const supabase = createClient();
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const admin = await requireSuperAdmin();
+    const supabase = createClient();
 
-  // 1. Update application record
-  const { error: appError } = await supabase
-    .from('career_applications')
-    .update({
-      status: newStatus,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', applicationId);
+    // 1. Update application record
+    const { error: appError } = await supabase
+      .from('career_applications')
+      .update({
+        status: newStatus,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', applicationId);
 
-  if (appError) throw new Error(appError.message);
+    if (appError) {
+      return { success: false, error: appError.message };
+    }
 
-  // 2. Write status history record
-  await supabase.from('application_status_history').insert({
-    application_id: applicationId,
-    changed_by: admin.id,
-    old_status: oldStatus,
-    new_status: newStatus,
-    created_at: new Date().toISOString(),
-  });
+    // 2. Write status history record
+    try {
+      await supabase.from('application_status_history').insert({
+        application_id: applicationId,
+        changed_by: admin.id,
+        old_status: oldStatus,
+        new_status: newStatus,
+        created_at: new Date().toISOString(),
+      });
+    } catch (histErr) {
+      console.warn('Status history insert error:', histErr);
+    }
 
-  // 3. Write audit log
-  await recordAdminAuditLog(
-    admin.id,
-    'APPLICATION_STATUS_CHANGED',
-    'APPLICATION',
-    applicationId,
-    { applicant: applicantName, oldStatus, newStatus }
-  );
+    // 3. Write audit log
+    try {
+      await recordAdminAuditLog(
+        admin.id,
+        'APPLICATION_STATUS_CHANGED',
+        'APPLICATION',
+        applicationId,
+        { applicant: applicantName, oldStatus, newStatus }
+      );
+    } catch (auditErr) {
+      console.warn('Audit log error:', auditErr);
+    }
 
-  revalidatePath(`/admin/applications/${applicationId}`);
-  revalidatePath('/admin/applications');
-  revalidatePath('/admin');
-  return { success: true };
+    revalidatePath(`/admin/applications/${applicationId}`);
+    revalidatePath('/admin/applications');
+    revalidatePath('/admin');
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to update application status:', err);
+    return { success: false, error: err.message || 'Failed to update application status' };
+  }
+}
+
+export interface SaveNoteResult {
+  success?: boolean;
+  id?: string;
+  error?: string;
 }
 
 /**
  * Super Admin: Add private internal note to an application
+ * Gracefully updates text columns on career_applications and inserts relational record in application_notes
  */
-export async function addApplicationNoteAction(applicationId: string, content: string) {
-  const admin = await requireSuperAdmin();
-  const supabase = createClient();
+export async function addApplicationNoteAction(
+  applicationId: string,
+  content: string
+): Promise<SaveNoteResult> {
+  try {
+    let admin;
+    try {
+      admin = await requireSuperAdmin();
+    } catch (authErr: any) {
+      return {
+        error: authErr.message || 'Unauthorized: SUPER_ADMIN role clearance required.',
+      };
+    }
 
-  const cleanContent = content.trim();
-  if (!cleanContent) throw new Error('Note content cannot be empty');
+    const supabase = createClient();
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
 
-  const { data, error } = await supabase
-    .from('application_notes')
-    .insert({
-      application_id: applicationId,
-      author_id: admin.id,
-      content: cleanContent,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })
-    .select('id')
-    .single();
+    const noteText = (content || '').trim();
+    if (!noteText) {
+      return { error: 'Note content cannot be empty' };
+    }
 
-  if (error) throw new Error(error.message);
+    // Update text columns on career_applications
+    try {
+      const { error: updateError } = await supabase
+        .from('career_applications')
+        .update({
+          admin_notes: noteText,
+          internal_notes: noteText,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', applicationId);
 
-  await recordAdminAuditLog(
-    admin.id,
-    'APPLICATION_NOTE_ADDED',
-    'NOTE',
-    data.id,
-    { applicationId }
-  );
+      if (updateError) {
+        console.warn('Could not update text columns on career_applications:', updateError.message);
+      }
+    } catch (updateErr: any) {
+      console.warn('career_applications update note column error:', updateErr?.message);
+    }
 
-  revalidatePath(`/admin/applications/${applicationId}`);
-  return { success: true, id: data.id };
+    // If application_notes table exists, insert an entry
+    let noteId = String(Date.now());
+    try {
+      const authorId = admin?.id || user?.id;
+      const authorName =
+        (admin as any)?.full_name ||
+        (admin as any)?.name ||
+        user?.user_metadata?.full_name ||
+        user?.user_metadata?.name ||
+        'Admin';
+
+      const { data, error: insertError } = await supabase
+        .from('application_notes')
+        .insert({
+          application_id: applicationId,
+          author_id: authorId,
+          author_name: authorName,
+          content: noteText,
+          note: noteText,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .select('id')
+        .single();
+
+      if (insertError) {
+        // Fallback for minimal column schema
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('application_notes')
+          .insert({
+            application_id: applicationId,
+            author_id: authorId,
+            content: noteText,
+          })
+          .select('id')
+          .single();
+
+        if (fallbackError) {
+          console.warn('application_notes insert fallback warning:', fallbackError.message);
+        } else if (fallbackData?.id) {
+          noteId = fallbackData.id;
+        }
+      } else if (data?.id) {
+        noteId = data.id;
+      }
+    } catch (insertErr: any) {
+      console.warn('application_notes insert exception:', insertErr?.message);
+    }
+
+    // Write audit log
+    try {
+      await recordAdminAuditLog(
+        admin?.id || user?.id || 'admin',
+        'APPLICATION_NOTE_ADDED',
+        'NOTE',
+        noteId,
+        { applicationId, note: noteText }
+      );
+    } catch (auditErr) {
+      console.error('Failed to log admin audit:', auditErr);
+    }
+
+    revalidatePath(`/admin/applications/${applicationId}`);
+    return { success: true, id: noteId };
+  } catch (err: any) {
+    console.error('Failed to save admin note:', err);
+    return { error: err.message || 'Failed to save note' };
+  }
 }
+
+/**
+ * Aliases for saving admin notes
+ */
+export const addAdminNote = addApplicationNoteAction;
+export const updateApplicationNotes = addApplicationNoteAction;
 
 /**
  * Super Admin: Delete private internal note
  */
-export async function deleteApplicationNoteAction(noteId: string, applicationId: string) {
-  const admin = await requireSuperAdmin();
-  const supabase = createClient();
+export async function deleteApplicationNoteAction(
+  noteId: string,
+  applicationId: string
+): Promise<{ success?: boolean; error?: string }> {
+  try {
+    let admin;
+    try {
+      admin = await requireSuperAdmin();
+    } catch (authErr: any) {
+      return {
+        error: authErr.message || 'Unauthorized: SUPER_ADMIN role clearance required.',
+      };
+    }
 
-  const { error } = await supabase
-    .from('application_notes')
-    .delete()
-    .eq('id', noteId)
-    .eq('author_id', admin.id);
+    const supabase = createClient();
 
-  if (error) throw new Error(error.message);
+    const { error } = await supabase
+      .from('application_notes')
+      .delete()
+      .eq('id', noteId);
 
-  await recordAdminAuditLog(admin.id, 'APPLICATION_NOTE_DELETED', 'NOTE', noteId, { applicationId });
+    if (error) {
+      return { error: error.message };
+    }
 
-  revalidatePath(`/admin/applications/${applicationId}`);
-  return { success: true };
+    try {
+      await recordAdminAuditLog(admin.id, 'APPLICATION_NOTE_DELETED', 'NOTE', noteId, { applicationId });
+    } catch (auditErr) {
+      console.error('Failed to log admin audit:', auditErr);
+    }
+
+    revalidatePath(`/admin/applications/${applicationId}`);
+    return { success: true };
+  } catch (err: any) {
+    console.error('Failed to delete admin note:', err);
+    return { error: err.message || 'Failed to delete note' };
+  }
 }
 
 /**

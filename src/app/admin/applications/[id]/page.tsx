@@ -43,10 +43,30 @@ export default async function AdminApplicationDetailPage({
     applicationData.applicant = applicationData.profiles;
   }
 
+  let initialNotes: ApplicationNote[] = (notesRes.data || []) as ApplicationNote[];
+  if (initialNotes.length === 0 && (applicationData.admin_notes || applicationData.internal_notes)) {
+    const singleNote = applicationData.internal_notes || applicationData.admin_notes;
+    if (singleNote) {
+      initialNotes = [
+        {
+          id: 'single-app-note',
+          application_id: params.id,
+          author_id: admin.id,
+          content: singleNote,
+          note: singleNote,
+          author_name: 'Admin',
+          created_at: applicationData.updated_at || new Date().toISOString(),
+          updated_at: applicationData.updated_at || new Date().toISOString(),
+          author: { full_name: 'Admin' } as any,
+        },
+      ];
+    }
+  }
+
   return (
     <ApplicationDossierClient
       initialApplication={applicationData as CareerApplication}
-      initialNotes={(notesRes.data || []) as ApplicationNote[]}
+      initialNotes={initialNotes}
       initialHistory={(historyRes.data || []) as ApplicationStatusHistory[]}
       adminId={admin.id}
     />

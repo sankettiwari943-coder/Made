@@ -90,6 +90,8 @@ ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS email TEXT;
 ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS applicant_email TEXT;
 ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS user_email TEXT;
 ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS contact_email TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS admin_notes TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS internal_notes TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_apps_ref ON public.career_applications(reference_code);
 CREATE INDEX IF NOT EXISTS idx_apps_role ON public.career_applications(role_id);
@@ -101,10 +103,16 @@ CREATE TABLE IF NOT EXISTS public.application_notes (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     application_id UUID NOT NULL REFERENCES public.career_applications(id) ON DELETE CASCADE,
     author_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-    content TEXT NOT NULL,
+    author_name TEXT,
+    content TEXT,
+    note TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+ALTER TABLE public.application_notes ADD COLUMN IF NOT EXISTS author_name TEXT;
+ALTER TABLE public.application_notes ADD COLUMN IF NOT EXISTS note TEXT;
+ALTER TABLE public.application_notes ADD COLUMN IF NOT EXISTS content TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_app_notes_app ON public.application_notes(application_id);
 

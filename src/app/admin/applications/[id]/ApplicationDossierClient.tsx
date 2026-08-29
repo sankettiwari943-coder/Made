@@ -49,6 +49,7 @@ export function ApplicationDossierClient({
 
   const [newNote, setNewNote] = useState('');
   const [isAddingNote, setIsAddingNote] = useState(false);
+  const [noteError, setNoteError] = useState<string | null>(null);
 
   const [resumeUrl, setResumeUrl] = useState<string | null>(null);
   const [isLoadingResume, setIsLoadingResume] = useState(false);
@@ -83,12 +84,17 @@ export function ApplicationDossierClient({
     setStatusMessage(null);
 
     try {
-      await updateApplicationStatusAction(
+      const res = await updateApplicationStatusAction(
         application.id,
         selectedStatus,
         application.status,
         candidateFullName !== 'Anonymous Applicant' ? candidateFullName : 'Applicant'
       );
+
+      if (res?.error) {
+        alert(res.error);
+        return;
+      }
 
       setApplication((prev) => ({ ...prev, status: selectedStatus }));
       setHistory((prev) => [
@@ -114,17 +120,25 @@ export function ApplicationDossierClient({
 
   const handleAddNote = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newNote.trim()) return;
+    const noteText = newNote.trim();
+    if (!noteText || isAddingNote) return;
 
     setIsAddingNote(true);
+    setNoteError(null);
+
     try {
-      const res = await addApplicationNoteAction(application.id, newNote);
+      const res = await addApplicationNoteAction(application.id, noteText);
+      if (res?.error) {
+        setNoteError(res.error);
+        return;
+      }
+
       setNotes((prev) => [
         {
-          id: res.id,
+          id: res?.id || String(Date.now()),
           application_id: application.id,
           author_id: adminId,
-          content: newNote.trim(),
+          content: noteText,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           author: { full_name: 'Admin' } as any,
@@ -133,7 +147,8 @@ export function ApplicationDossierClient({
       ]);
       setNewNote('');
     } catch (err: any) {
-      alert(err.message || 'Failed to add note');
+      console.error('Failed to add note:', err);
+      setNoteError(err?.message || 'Failed to add note');
     } finally {
       setIsAddingNote(false);
     }
@@ -141,7 +156,11 @@ export function ApplicationDossierClient({
 
   const handleDeleteNote = async (noteId: string) => {
     try {
-      await deleteApplicationNoteAction(noteId, application.id);
+      const res = await deleteApplicationNoteAction(noteId, application.id);
+      if (res?.error) {
+        alert(res.error);
+        return;
+      }
       setNotes((prev) => prev.filter((n) => n.id !== noteId));
     } catch (err: any) {
       alert(err.message || 'Failed to delete note');
@@ -481,11 +500,32 @@ export function ApplicationDossierClient({
               <Textarea
                 placeholder="Add private evaluation notes, interview questions, or assessment remarks..."
                 value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
+                onChange={(e) => {
+                  setNewNote(e.target.value);
+                  if (noteError) setNoteError(null);
+                }}
+                disabled={isAddingNote}
               />
+              {noteError && (
+                <div
+                  style={{
+                    color: 'var(--color-danger)',
+                    fontFamily: 'var(--font-mono)',
+                    fontSize: '0.75rem',
+                    marginTop: 'var(--space-2)',
+                  }}
+                >
+                  {noteError}
+                </div>
+              )}
               <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 'var(--space-2)' }}>
-                <Button variant="outline" size="sm" disabled={isAddingNote || !newNote.trim()}>
-                  {isAddingNote ? 'Saving...' : '+ Add Note'}
+                <Button
+                  type="submit"
+                  variant="outline"
+                  size="sm"
+                  disabled={isAddingNote || !newNote.trim()}
+                >
+                  {isAddingNote ? 'SAVING...' : '+ ADD NOTE'}
                 </Button>
               </div>
             </form>

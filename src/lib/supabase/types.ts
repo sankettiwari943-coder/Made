@@ -287,6 +287,8 @@ export interface CareerApplication {
   applicant_email?: string | null;
   user_email?: string | null;
   contact_email?: string | null;
+  admin_notes?: string | null;
+  internal_notes?: string | null;
   cover_message: string;
   what_they_build: string;
   experience: string;
@@ -309,6 +311,8 @@ export interface ApplicationNote {
   application_id: string;
   author_id: string;
   content: string;
+  note?: string;
+  author_name?: string;
   created_at: string;
   updated_at: string;
   author?: Profile;
