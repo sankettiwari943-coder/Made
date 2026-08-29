@@ -202,19 +202,39 @@ export const superAdminEmails = [
 
 /**
  * Super Admin check:
- * Grants full clearance to designated super admin emails, super_admin profile roles, and app metadata roles.
+ * Returns true if profile role is super_admin / SUPER_ADMIN or user is a designated super admin.
  */
-export const isSuperAdmin = (user: any, profile: any): boolean => {
-  const superAdminEmails = ['sankettiwari943@gmail.com', 'apurvadwivedi666@outlook.com'];
+export const isSuperAdmin = (profileOrUser: any, optionalProfile?: any): boolean => {
+  const profile = optionalProfile || profileOrUser;
+  const user = optionalProfile ? profileOrUser : (profileOrUser?.email ? profileOrUser : null);
 
-  if (user?.email && (superAdminEmails.includes(user.email) || superAdminEmails.includes(user.email.toLowerCase()))) return true;
-  if (profile?.email && (superAdminEmails.includes(profile.email) || superAdminEmails.includes(profile.email.toLowerCase()))) return true;
-  if (profile?.role === 'super_admin' || profile?.role === 'SUPER_ADMIN' || profile?.is_super_admin === true) return true;
-  if (user?.app_metadata?.role === 'super_admin' || user?.app_metadata?.role === 'SUPER_ADMIN') return true;
-  if (user?.user_metadata?.role === 'super_admin' || user?.user_metadata?.role === 'SUPER_ADMIN') return true;
+  const profileRole = profile?.role?.toString().toLowerCase();
+  if (profileRole === 'super_admin') return true;
+  if (profile?.is_super_admin === true) return true;
+
+  const email = (user?.email || profile?.email)?.toString().toLowerCase();
+  if (email && superAdminEmails.includes(email)) return true;
+
+  const appRole = user?.app_metadata?.role?.toString().toLowerCase();
+  if (appRole === 'super_admin') return true;
+
+  const userMetaRole = user?.user_metadata?.role?.toString().toLowerCase();
+  if (userMetaRole === 'super_admin') return true;
 
   return false;
 };
+
+/**
+ * Admin check:
+ * Returns true if profile role is admin / ADMIN or super_admin / SUPER_ADMIN.
+ */
+export const isAdmin = (profileOrUser: any, optionalProfile?: any): boolean => {
+  const profile = optionalProfile || profileOrUser;
+  const profileRole = profile?.role?.toString().toLowerCase();
+  if (profileRole === 'admin' || profileRole === 'super_admin') return true;
+  return isSuperAdmin(profileOrUser, optionalProfile);
+};
+
 
 /**
  * Check if current user is an authenticated Super Admin without redirecting.

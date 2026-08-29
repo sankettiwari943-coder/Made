@@ -711,33 +711,103 @@ export async function getSecureResumeDownloadUrl(resumePath: string): Promise<st
  */
 export async function updateBuilderRoleAction(
   targetUserId: string,
-  newRole: UserRole,
+  newRole: UserRole | string,
   builderName?: string
 ) {
   const admin = await requireSuperAdmin();
   const serviceClient = createServiceClient();
+  const supabase = createClient();
 
-  const { error } = await serviceClient
-    .from('profiles')
-    .update({
-      role: newRole,
-      updated_at: new Date().toISOString(),
-    })
-    .eq('id', targetUserId);
+  const normalizedRole = (newRole || '').toUpperCase() as UserRole;
 
-  if (error) throw new Error(error.message);
+  // 1. Attempt RPC call if available
+  try {
+    const { data: rpcData, error: rpcError } = await supabase.rpc('update_user_role', {
+      target_user_id: targetUserId,
+      new_role: normalizedRole,
+    });
 
-  await recordAdminAuditLog(
-    admin.id,
-    'USER_ROLE_UPDATED',
-    'BUILDER',
-    targetUserId,
-    { builderName: builderName || 'Builder', newRole }
-  );
+    if (!rpcError && rpcData) {
+      revalidatePath('/admin/builders');
+      revalidatePath('/admin/settings');
+      revalidatePath('/admin');
+      revalidatePath('/builders');
+      return { success: true, message: (rpcData as any)?.message || 'Role updated' };
+    }
+  } catch (rpcErr) {
+    console.warn('[updateBuilderRoleAction] RPC call fallback:', rpcErr);
+  }
 
-  revalidatePath('/admin/builders');
-  revalidatePath('/admin');
-  revalidatePath('/builders');
-  return { success: true };
+  // 2. Direct server-level execution enforcing Single Super Admin rule
+  if (normalizedRole === 'SUPER_ADMIN' && admin.id !== targetUserId) {
+    // Demote current Super Admin to ADMIN
+    await serviceClient
+      .from('profiles')
+      .update({
+        role: 'ADMIN',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', admin.id);
+
+    // Promote target user to SUPER_ADMIN
+    const { error: targetError } = await serviceClient
+      .from('profiles')
+      .update({
+        role: 'SUPER_ADMIN',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', targetUserId);
+
+    if (targetError) throw new Error(targetError.message);
+
+    await recordAdminAuditLog(
+      admin.id,
+      'SUPER_ADMIN_TRANSFERRED',
+      'BUILDER',
+      targetUserId,
+      {
+        builderName: builderName || 'Builder',
+        newRole: 'SUPER_ADMIN',
+        demotedAdminId: admin.id,
+      }
+    );
+
+    revalidatePath('/admin/builders');
+    revalidatePath('/admin/settings');
+    revalidatePath('/admin');
+    revalidatePath('/builders');
+    return {
+      success: true,
+      message: `Super Admin transferred to ${builderName || 'user'}. Your account is now Admin.`,
+    };
+  } else {
+    const { error } = await serviceClient
+      .from('profiles')
+      .update({
+        role: normalizedRole,
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', targetUserId);
+
+    if (error) throw new Error(error.message);
+
+    await recordAdminAuditLog(
+      admin.id,
+      'USER_ROLE_UPDATED',
+      'BUILDER',
+      targetUserId,
+      { builderName: builderName || 'Builder', newRole: normalizedRole }
+    );
+
+    revalidatePath('/admin/builders');
+    revalidatePath('/admin/settings');
+    revalidatePath('/admin');
+    revalidatePath('/builders');
+    return {
+      success: true,
+      message: `Role updated to [${normalizedRole}] for ${builderName || 'builder'}.`,
+    };
+  }
 }
+
 

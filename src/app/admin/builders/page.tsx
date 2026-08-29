@@ -1,6 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
-import { requireSuperAdmin } from '@/lib/auth/authorization';
+import { requireSuperAdmin, isSuperAdmin } from '@/lib/auth/authorization';
 import { createClient } from '@/lib/supabase/server';
 import { Profile } from '@/lib/supabase/types';
 import { Badge } from '@/components/ui/Badge';
@@ -8,8 +8,9 @@ import { Button } from '@/components/ui/Button';
 import { BuilderRoleSelect } from './BuilderRoleSelect';
 
 export default async function AdminBuildersPage() {
-  await requireSuperAdmin();
+  const currentAdminProfile = await requireSuperAdmin();
   const supabase = createClient();
+  const canManageRoles = isSuperAdmin(currentAdminProfile);
 
   let builders: Profile[] = [];
   try {
@@ -114,6 +115,7 @@ export default async function AdminBuildersPage() {
                   userId={builder.id}
                   currentRole={builder.role}
                   builderName={builder.full_name || builder.username || 'Builder'}
+                  isSuperAdmin={canManageRoles}
                 />
 
                 {builder.username && builder.onboarding_completed && (
@@ -129,4 +131,6 @@ export default async function AdminBuildersPage() {
     </div>
   );
 }
+
+
 

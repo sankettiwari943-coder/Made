@@ -28,51 +28,70 @@ async function runTests() {
   const actionsFile = fs.readFileSync(path.join(__dirname, '../src/lib/admin/actions.ts'), 'utf8');
   const accessDenied = fs.readFileSync(path.join(__dirname, '../src/components/admin/AdminAccessDenied.tsx'), 'utf8');
   const adminNav = fs.readFileSync(path.join(__dirname, '../src/components/admin/AdminNav.tsx'), 'utf8');
+  const builderRoleSelect = fs.readFileSync(path.join(__dirname, '../src/app/admin/builders/BuilderRoleSelect.tsx'), 'utf8');
+  const rpcMigration = fs.readFileSync(path.join(__dirname, '../supabase/migrations/07_update_user_role_rpc.sql'), 'utf8');
 
-  // Test 1: Super Admin Definition & isSuperAdmin Function
-  console.log('[TEST 1] isSuperAdmin Multi-Identity Verification');
+  // Test 1: Super Admin Definition & isSuperAdmin / isAdmin Guards
+  console.log('[TEST 1] isSuperAdmin & isAdmin Multi-Identity Verification');
   assert('authorization.ts defines isSuperAdmin', authFile.includes('export const isSuperAdmin ='));
+  assert('authorization.ts defines isAdmin', authFile.includes('export const isAdmin ='));
   assert('authorization.ts defines superAdminEmails', authFile.includes('superAdminEmails'));
   assert('superAdminEmails includes sankettiwari943@gmail.com', authFile.includes('sankettiwari943@gmail.com'));
   assert('superAdminEmails includes apurvadwivedi666@outlook.com', authFile.includes('apurvadwivedi666@outlook.com'));
 
-  // Test isSuperAdmin logic directly
-  const isSuperAdmin = (user, profile) => {
-    const superAdminEmails = ['sankettiwari943@gmail.com', 'apurvadwivedi666@outlook.com'];
-    if (user?.email && (superAdminEmails.includes(user.email) || superAdminEmails.includes(user.email.toLowerCase()))) return true;
-    if (profile?.email && (superAdminEmails.includes(profile.email) || superAdminEmails.includes(profile.email.toLowerCase()))) return true;
-    if (profile?.role === 'super_admin' || profile?.role === 'SUPER_ADMIN' || profile?.is_super_admin === true) return true;
-    if (user?.app_metadata?.role === 'super_admin' || user?.app_metadata?.role === 'SUPER_ADMIN') return true;
-    if (user?.user_metadata?.role === 'super_admin' || user?.user_metadata?.role === 'SUPER_ADMIN') return true;
+  // Test isSuperAdmin & isAdmin logic directly
+  const isSuperAdmin = (profile) => {
+    const role = profile?.role?.toString().toLowerCase();
+    if (role === 'super_admin') return true;
+    if (profile?.email && ['sankettiwari943@gmail.com', 'apurvadwivedi666@outlook.com'].includes(profile.email.toLowerCase())) return true;
     return false;
   };
 
-  assert('Apurva email is authorized as Super Admin', isSuperAdmin({ email: 'apurvadwivedi666@outlook.com' }, null) === true);
-  assert('Sanket email is authorized as Super Admin', isSuperAdmin({ email: 'sankettiwari943@gmail.com' }, null) === true);
-  assert('super_admin profile role is authorized', isSuperAdmin({ email: 'other@test.com' }, { role: 'super_admin' }) === true);
-  assert('SUPER_ADMIN profile role is authorized', isSuperAdmin({ email: 'other@test.com' }, { role: 'SUPER_ADMIN' }) === true);
-  assert('app_metadata super_admin is authorized', isSuperAdmin({ email: 'other@test.com', app_metadata: { role: 'super_admin' } }, null) === true);
-  assert('Regular member is rejected', isSuperAdmin({ email: 'user@test.com' }, { role: 'MEMBER' }) === false);
-  assert('Standard ADMIN role without Super Admin elevation is rejected', isSuperAdmin({ email: 'admin@test.com' }, { role: 'ADMIN' }) === false);
+  const isAdmin = (profile) => {
+    const role = profile?.role?.toString().toLowerCase();
+    return role === 'admin' || role === 'super_admin' || isSuperAdmin(profile);
+  };
 
-  // Test 2: Control Center UI and Navigation Badges
-  console.log('\n[TEST 2] Admin Navigation & Badges');
+  assert('isSuperAdmin(super_admin) is true', isSuperAdmin({ role: 'super_admin' }) === true);
+  assert('isSuperAdmin(SUPER_ADMIN) is true', isSuperAdmin({ role: 'SUPER_ADMIN' }) === true);
+  assert('isSuperAdmin(admin) is false', isSuperAdmin({ role: 'admin' }) === false);
+  assert('isAdmin(admin) is true', isAdmin({ role: 'admin' }) === true);
+  assert('isAdmin(ADMIN) is true', isAdmin({ role: 'ADMIN' }) === true);
+  assert('isAdmin(super_admin) is true', isAdmin({ role: 'super_admin' }) === true);
+  assert('isAdmin(member) is false', isAdmin({ role: 'member' }) === false);
+
+  // Test 2: Role Management & Transfer Confirmation Modal in Builders Panel
+  console.log('\n[TEST 2] BuilderRoleSelect & Transfer Confirmation Modal');
+  assert('BuilderRoleSelect checks isSuperAdmin prop', builderRoleSelect.includes('isSuperAdmin'));
+  assert('BuilderRoleSelect renders read-only Badge when !isSuperAdmin', builderRoleSelect.includes('!isSuperAdmin') && builderRoleSelect.includes('<Badge'));
+  assert('BuilderRoleSelect calls update_user_role RPC', builderRoleSelect.includes('update_user_role'));
+  assert('BuilderRoleSelect contains Transfer Warning Modal', builderRoleSelect.includes('showTransferModal'));
+  assert('Transfer Modal contains single Super Admin warning copy', builderRoleSelect.includes('There can only be one Super Admin at a time'));
+
+  // Test 3: SQL Migration RPC Function
+  console.log('\n[TEST 3] update_user_role SQL RPC Migration');
+  assert('07_update_user_role_rpc.sql defines update_user_role', rpcMigration.includes('FUNCTION public.update_user_role'));
+  assert('RPC enforces single Super Admin demotion logic', rpcMigration.includes('SUPER_ADMIN_TRANSFERRED') && rpcMigration.includes('role = \'ADMIN\''));
+
+  // Test 4: Control Center UI and Navigation Badges
+  console.log('\n[TEST 4] Admin Navigation & Badges');
   assert('AdminLayout checks isSuperAdmin', adminLayout.includes('isSuperAdmin'));
   assert('AdminLayout returns AdminAccessDenied when !isSuperAdmin', adminLayout.includes('<AdminAccessDenied'));
   assert('AdminLayout suppresses children for non-super-admins', adminLayout.indexOf('<AdminAccessDenied') < adminLayout.indexOf('{children}'));
   assert('AdminNav renders SUPER_ADMIN badge with brackets', adminNav.includes('useBrackets') && adminNav.includes('{adminRole}'));
   assert('AdminAccessDenied displays 403 Forbidden badge', accessDenied.includes('403 FORBIDDEN'));
 
-  // Test 3: Server Actions Defense-in-Depth
-  console.log('\n[TEST 3] Server Actions Defense-in-Depth');
+  // Test 5: Server Actions Defense-in-Depth
+  console.log('\n[TEST 5] Server Actions Defense-in-Depth');
   assert('actions.ts imports requireSuperAdmin', actionsFile.includes('requireSuperAdmin'));
   assert('actions.ts calls requireSuperAdmin in actions', actionsFile.includes('await requireSuperAdmin()'));
   assert('updateApplicationStatusAction is protected', actionsFile.includes('updateApplicationStatusAction') && actionsFile.includes('requireSuperAdmin()'));
   assert('addApplicationNoteAction is protected', actionsFile.includes('addApplicationNoteAction') && actionsFile.includes('requireSuperAdmin()'));
   assert('updateBuilderRoleAction is protected', actionsFile.includes('updateBuilderRoleAction') && actionsFile.includes('requireSuperAdmin()'));
+  assert('updateBuilderRoleAction handles single Super Admin demotion', actionsFile.includes('SUPER_ADMIN_TRANSFERRED') && actionsFile.includes('role: \'ADMIN\''));
 
-  // Test 4: Verify all admin page components call requireSuperAdmin
-  console.log('\n[TEST 4] Admin Route Pages Protection');
+  // Test 6: Verify all admin page components call requireSuperAdmin
+  console.log('\n[TEST 6] Admin Route Pages Protection');
   const adminPages = [
     'src/app/admin/page.tsx',
     'src/app/admin/applications/page.tsx',

@@ -168,7 +168,47 @@ export default async function AdminSettingsPage() {
             </div>
           </div>
         </div>
+
+        {/* Section 4: Role Governance & Single Super Admin Policy */}
+        <div
+          style={{
+            backgroundColor: 'var(--bg-surface)',
+            border: '1px solid var(--border-technical)',
+            borderRadius: 'var(--radius-xs)',
+            padding: 'var(--space-6)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-4)' }}>
+            <span className="technical-label" style={{ color: 'var(--text-dim)' }}>
+              04 // ROLE GOVERNANCE & SINGLE SUPER ADMIN POLICY
+            </span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--color-warning)' }}>
+              [ STRICT ENFORCEMENT ]
+            </span>
+          </div>
+
+          <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 'var(--space-4)' }}>
+            MADE maintains a strict single Super Admin governance model. Only the active Super Admin may assign or transfer administrative roles.
+            Transferring Super Admin privileges will demote the active account to Admin, ensuring exclusive Level 0 platform authority.
+          </p>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+            <a
+              href="/admin/builders"
+              style={{
+                fontFamily: 'var(--font-mono)',
+                fontSize: '0.75rem',
+                color: 'var(--accent-primary-hover)',
+                textDecoration: 'underline',
+                textUnderlineOffset: '4px',
+              }}
+            >
+              Manage Builder & Admin Roles in Directory →
+            </a>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
+
