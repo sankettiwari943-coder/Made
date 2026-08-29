@@ -82,31 +82,78 @@ export async function POST(request: Request) {
     const refCode = generateReferenceCode();
 
     // 5. Insert new application with unique constraint error protection
-    const { data: newApp, error: insertError } = await supabase
+    const resumeVal =
+      body.resume_url ||
+      body.resume ||
+      body.cv_url ||
+      body.file_url ||
+      body.resume_path ||
+      null;
+
+    const insertPayload: Record<string, any> = {
+      reference_code: refCode,
+      role_id: body.role_id,
+      applicant_id: user.id,
+      full_name: resolvedFullName || null,
+      name: resolvedFullName || null,
+      applicant_name: resolvedFullName || null,
+      email: candidateEmail || null,
+      applicant_email: candidateEmail || null,
+      user_email: candidateEmail || null,
+      contact_email: candidateEmail || null,
+      cover_message: payload.cover_message,
+      what_they_build: payload.what_they_build,
+      experience: payload.experience,
+      github_url: payload.github_url || null,
+      linkedin_url: payload.linkedin_url || null,
+      portfolio_url: payload.portfolio_url || null,
+      resume_path: resumeVal,
+      resume_url: resumeVal,
+      resume: resumeVal,
+      cv_url: resumeVal,
+      file_url: resumeVal,
+      additional_information: payload.additional_information || null,
+      status: 'SUBMITTED',
+    };
+
+    let { data: newApp, error: insertError } = await supabase
       .from('career_applications')
-      .insert({
-        reference_code: refCode,
-        role_id: body.role_id,
-        applicant_id: user.id,
-        full_name: resolvedFullName || null,
-        name: resolvedFullName || null,
-        applicant_name: resolvedFullName || null,
-        email: candidateEmail || null,
-        applicant_email: candidateEmail || null,
-        user_email: candidateEmail || null,
-        contact_email: candidateEmail || null,
-        cover_message: payload.cover_message,
-        what_they_build: payload.what_they_build,
-        experience: payload.experience,
-        github_url: payload.github_url || null,
-        linkedin_url: payload.linkedin_url || null,
-        portfolio_url: payload.portfolio_url || null,
-        resume_path: body.resume_path || null,
-        additional_information: payload.additional_information || null,
-        status: 'SUBMITTED',
-      })
+      .insert(insertPayload)
       .select('id, reference_code, status')
       .single();
+
+    if (insertError && (insertError.message?.includes('column') || insertError.code === 'PGRST204')) {
+      const fallbackResult = await supabase
+        .from('career_applications')
+        .insert({
+          reference_code: refCode,
+          role_id: body.role_id,
+          applicant_id: user.id,
+          full_name: resolvedFullName || null,
+          name: resolvedFullName || null,
+          applicant_name: resolvedFullName || null,
+          email: candidateEmail || null,
+          applicant_email: candidateEmail || null,
+          user_email: candidateEmail || null,
+          contact_email: candidateEmail || null,
+          cover_message: payload.cover_message,
+          what_they_build: payload.what_they_build,
+          experience: payload.experience,
+          github_url: payload.github_url || null,
+          linkedin_url: payload.linkedin_url || null,
+          portfolio_url: payload.portfolio_url || null,
+          resume_path: resumeVal,
+          additional_information: payload.additional_information || null,
+          status: 'SUBMITTED',
+        })
+        .select('id, reference_code, status')
+        .single();
+
+      if (!fallbackResult.error && fallbackResult.data) {
+        newApp = fallbackResult.data;
+        insertError = null;
+      }
+    }
 
     if (insertError) {
       if (

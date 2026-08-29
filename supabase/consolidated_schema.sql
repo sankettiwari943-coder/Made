@@ -475,6 +475,10 @@ ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS user_email TEXT;
 ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS contact_email TEXT;
 ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS admin_notes TEXT;
 ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS internal_notes TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS resume_url TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS resume TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS cv_url TEXT;
+ALTER TABLE public.career_applications ADD COLUMN IF NOT EXISTS file_url TEXT;
 
 CREATE INDEX IF NOT EXISTS idx_apps_ref ON public.career_applications(reference_code);
 CREATE INDEX IF NOT EXISTS idx_apps_role ON public.career_applications(role_id);

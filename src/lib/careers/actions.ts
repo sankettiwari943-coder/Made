@@ -44,6 +44,10 @@ export async function submitCareerApplicationAction(formData: {
   linkedin_url?: string | null;
   portfolio_url?: string | null;
   resume_path?: string | null;
+  resume_url?: string | null;
+  resume?: string | null;
+  cv_url?: string | null;
+  file_url?: string | null;
   additional_information?: string | null;
 }): Promise<SubmitApplicationResult> {
   try {
@@ -119,9 +123,49 @@ export async function submitCareerApplicationAction(formData: {
     const refCode = generateReferenceCode();
 
     // 5. Insert new application row with database unique constraint error handling
-    const { data: newApp, error: insertError } = await supabase
+    const resumeVal =
+      formData.resume_url ||
+      formData.resume ||
+      formData.cv_url ||
+      formData.file_url ||
+      formData.resume_path ||
+      null;
+
+    const insertPayload: Record<string, any> = {
+      reference_code: refCode,
+      role_id: formData.role_id,
+      applicant_id: user.id,
+      full_name: resolvedFullName || null,
+      name: resolvedFullName || null,
+      applicant_name: resolvedFullName || null,
+      email: candidateEmail || null,
+      applicant_email: candidateEmail || null,
+      user_email: candidateEmail || null,
+      contact_email: candidateEmail || null,
+      cover_message: payload.cover_message,
+      what_they_build: payload.what_they_build,
+      experience: payload.experience,
+      github_url: payload.github_url || null,
+      linkedin_url: payload.linkedin_url || null,
+      portfolio_url: payload.portfolio_url || null,
+      resume_path: resumeVal,
+      resume_url: resumeVal,
+      resume: resumeVal,
+      cv_url: resumeVal,
+      file_url: resumeVal,
+      additional_information: payload.additional_information || null,
+      status: 'SUBMITTED',
+    };
+
+    let { data: newApp, error: insertError } = await supabase
       .from('career_applications')
-      .insert({
+      .insert(insertPayload)
+      .select('id, reference_code, status')
+      .single();
+
+    if (insertError && (insertError.message?.includes('column') || insertError.code === 'PGRST204')) {
+      // Fallback if specific resume columns are not in existing database table
+      const fallbackPayload = {
         reference_code: refCode,
         role_id: formData.role_id,
         applicant_id: user.id,
@@ -138,12 +182,22 @@ export async function submitCareerApplicationAction(formData: {
         github_url: payload.github_url || null,
         linkedin_url: payload.linkedin_url || null,
         portfolio_url: payload.portfolio_url || null,
-        resume_path: formData.resume_path || null,
+        resume_path: resumeVal,
         additional_information: payload.additional_information || null,
         status: 'SUBMITTED',
-      })
-      .select('id, reference_code, status')
-      .single();
+      };
+
+      const fallbackResult = await supabase
+        .from('career_applications')
+        .insert(fallbackPayload)
+        .select('id, reference_code, status')
+        .single();
+
+      if (!fallbackResult.error && fallbackResult.data) {
+        newApp = fallbackResult.data;
+        insertError = null;
+      }
+    }
 
     if (insertError) {
       // Catch unique constraint violations gracefully

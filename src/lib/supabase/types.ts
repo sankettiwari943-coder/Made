@@ -296,6 +296,10 @@ export interface CareerApplication {
   linkedin_url: string | null;
   portfolio_url: string | null;
   resume_path: string | null;
+  resume_url?: string | null;
+  resume?: string | null;
+  cv_url?: string | null;
+  file_url?: string | null;
   additional_information: string | null;
   status: ApplicationStatus;
   created_at: string;

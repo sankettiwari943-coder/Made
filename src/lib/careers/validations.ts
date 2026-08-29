@@ -132,6 +132,11 @@ export const CareerApplicationSchema = z.object({
   github_url: HttpUrlSchema,
   linkedin_url: HttpUrlSchema,
   portfolio_url: HttpUrlSchema,
+  resume_path: z.string().optional().or(z.literal('')),
+  resume_url: z.string().optional().or(z.literal('')),
+  resume: z.string().optional().or(z.literal('')),
+  cv_url: z.string().optional().or(z.literal('')),
+  file_url: z.string().optional().or(z.literal('')),
   additional_information: z.string().max(2000).optional().or(z.literal('')),
 });
 

@@ -77,6 +77,16 @@ export function ApplicationDossierClient({
     application.auth_user?.email ||
     'No email provided';
 
+  const resumeLink =
+    application.resume_url ||
+    application.resume ||
+    application.cv_url ||
+    application.file_url ||
+    (application.resume_path && (application.resume_path.startsWith('http://') || application.resume_path.startsWith('https://'))
+      ? application.resume_path
+      : null) ||
+    null;
+
   const handleStatusChange = async () => {
     if (selectedStatus === application.status) return;
 
@@ -379,7 +389,18 @@ export function ApplicationDossierClient({
               <span className="technical-label" style={{ color: 'var(--accent-primary-hover)', display: 'block', marginBottom: 'var(--space-2)' }}>
                 SECURE RESUME ACCESS
               </span>
-              {application.resume_path ? (
+              {resumeLink ? (
+                <div>
+                  <a
+                    href={resumeLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 text-xs font-mono tracking-wider uppercase bg-zinc-900 border border-zinc-700 hover:border-zinc-500 text-white rounded transition-colors"
+                  >
+                    <span>View Resume Document ↗</span>
+                  </a>
+                </div>
+              ) : application.resume_path ? (
                 <div>
                   <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-3)' }}>
                     Resume is encrypted in private storage. Authorized Super Admins can generate a 5-minute signed token.

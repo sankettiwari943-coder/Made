@@ -49,6 +49,8 @@ export default function CareerApplyPage({
   const [portfolioUrl, setPortfolioUrl] = useState('');
   const [additionalInfo, setAdditionalInfo] = useState('');
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+  const [resumeUrl, setResumeUrl] = useState<string | null>(null);
+  const [isUploadingResume, setIsUploadingResume] = useState(false);
 
   // Submission State
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -439,7 +441,7 @@ export default function CareerApplyPage({
     );
   }
 
-  const handleResumeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleResumeChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -453,17 +455,37 @@ export default function CareerApplyPage({
       'application/msword',
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     ];
-    if (!allowed.includes(file.type)) {
+    const fileExt = file.name.split('.').pop() || 'pdf';
+    if (!allowed.includes(file.type) && !['pdf', 'doc', 'docx'].includes(fileExt.toLowerCase())) {
       setErrors((prev) => ({ ...prev, resume: 'Only PDF or DOCX documents are supported.' }));
       return;
     }
 
     setResumeFile(file);
+    setIsUploadingResume(true);
     setErrors((prev) => {
       const next = { ...prev };
       delete next.resume;
       return next;
     });
+
+    try {
+      const supabase = createClient();
+      const filePath = `${Date.now()}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const { error: uploadError } = await supabase.storage.from('resumes').upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const {
+        data: { publicUrl },
+      } = supabase.storage.from('resumes').getPublicUrl(filePath);
+      setResumeUrl(publicUrl);
+    } catch (err: any) {
+      console.error('Failed to upload resume:', err);
+      setErrors((prev) => ({ ...prev, resume: err.message || 'Failed to upload resume file.' }));
+    } finally {
+      setIsUploadingResume(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -517,22 +539,7 @@ export default function CareerApplyPage({
     }
 
     try {
-      // 1. Upload resume if provided
-      const resolvedUserId = currentUser?.id || userId;
-      let finalResumePath = null;
-      if (resumeFile && resolvedUserId) {
-        const fileExt = resumeFile.name.split('.').pop() || 'pdf';
-        const filePath = `${resolvedUserId}/${Date.now()}.${fileExt}`;
-        const { error: uploadError } = await supabase.storage
-          .from('resumes')
-          .upload(filePath, resumeFile);
-
-        if (!uploadError) {
-          finalResumePath = filePath;
-        }
-      }
-
-      // 2. Submit via Server Action Guard
+      // Submit via Server Action Guard
       const result = await submitCareerApplicationAction({
         role_id: role.id,
         full_name: payload.full_name,
@@ -547,7 +554,11 @@ export default function CareerApplyPage({
         github_url: payload.github_url,
         linkedin_url: payload.linkedin_url,
         portfolio_url: payload.portfolio_url,
-        resume_path: finalResumePath,
+        resume_path: resumeUrl,
+        resume_url: resumeUrl,
+        resume: resumeUrl,
+        cv_url: resumeUrl,
+        file_url: resumeUrl,
         additional_information: payload.additional_information,
       });
 
@@ -743,8 +754,19 @@ export default function CareerApplyPage({
                     type="file"
                     accept=".pdf,.doc,.docx,application/pdf"
                     onChange={handleResumeChange}
+                    disabled={isUploadingResume}
                     style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-muted)' }}
                   />
+                  {isUploadingResume && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--accent-primary-hover)', marginTop: '4px', display: 'block' }}>
+                      [ UPLOADING RESUME... ]
+                    </span>
+                  )}
+                  {!isUploadingResume && resumeUrl && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: '#10b981', marginTop: '4px', display: 'block' }}>
+                      ✓ Resume uploaded and attached
+                    </span>
+                  )}
                   {errors.resume && (
                     <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--color-danger)', marginTop: '4px', display: 'block' }}>
                       {errors.resume}
