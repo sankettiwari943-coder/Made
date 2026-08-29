@@ -40,6 +40,14 @@ export default async function AdminLayout({
     return <AdminAccessDenied user={user} profile={profile} />;
   }
 
+  const adminName =
+    profile?.full_name ||
+    (user.email?.toLowerCase().includes('apurva')
+      ? 'Apurva Diwedi'
+      : user.email?.toLowerCase().includes('sanket')
+      ? 'Sanket Tiwari'
+      : user.email?.split('@')[0]);
+
   return (
     <div style={{ padding: 'var(--space-12) 0 var(--space-28)', minHeight: '90vh' }}>
       <Container>
@@ -54,7 +62,7 @@ export default async function AdminLayout({
         >
           {/* Admin Sidebar Navigation */}
           <aside style={{ position: 'sticky', top: '100px' }}>
-            <AdminNav adminRole={profile?.role || 'SUPER_ADMIN'} adminName={profile?.full_name} />
+            <AdminNav adminRole="SUPER_ADMIN" adminName={adminName} />
           </aside>
 
           {/* Admin Main Workplace */}

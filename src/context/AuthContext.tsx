@@ -245,9 +245,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, [router]);
 
-  const role: UserRole | null = profile?.role ?? (user?.user_metadata?.role as UserRole) ?? null;
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
-  const isSuperAdmin = role === 'SUPER_ADMIN';
+  const superAdminClearance =
+    (user?.email && ['sankettiwari943@gmail.com', 'apurvadwivedi666@outlook.com'].includes(user.email.toLowerCase())) ||
+    (profile?.email && ['sankettiwari943@gmail.com', 'apurvadwivedi666@outlook.com'].includes(profile.email.toLowerCase())) ||
+    profile?.role === 'SUPER_ADMIN' ||
+    (profile?.role as string) === 'super_admin' ||
+    (profile as any)?.is_super_admin === true ||
+    user?.app_metadata?.role === 'super_admin' ||
+    user?.app_metadata?.role === 'SUPER_ADMIN' ||
+    user?.user_metadata?.role === 'super_admin' ||
+    user?.user_metadata?.role === 'SUPER_ADMIN';
+
+  const role: UserRole | null = (superAdminClearance ? 'SUPER_ADMIN' : null) ?? profile?.role ?? (user?.user_metadata?.role as UserRole) ?? null;
+  const isSuperAdmin = Boolean(superAdminClearance || role === 'SUPER_ADMIN' || (role as string) === 'super_admin');
+  const isAdmin = Boolean(isSuperAdmin || role === 'ADMIN' || (role as string) === 'admin');
 
   const contextValue = useMemo<AuthContextType>(
     () => ({
@@ -288,3 +299,15 @@ export const useAuth = (): AuthContextType => {
   }
   return context;
 };
+
+export const useAdmin = () => {
+  const auth = useAuth();
+  return {
+    ...auth,
+    canWrite: auth.isSuperAdmin,
+    canReview: auth.isSuperAdmin,
+    canCommitStatus: auth.isSuperAdmin,
+    canAddNotes: auth.isSuperAdmin,
+  };
+};
+

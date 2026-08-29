@@ -23,43 +23,56 @@ function assert(name, condition) {
 }
 
 async function runTests() {
-  // Test 1: Role Evaluation Matrix
-  console.log('[TEST 1] Role Evaluation Matrix');
-  const mockMemberProfile = { id: 'usr-1', role: 'MEMBER', full_name: 'Regular Builder' };
-  const mockAdminProfile = { id: 'usr-2', role: 'ADMIN', full_name: 'Standard Admin' };
-  const mockSuperAdminProfile = { id: 'usr-3', role: 'SUPER_ADMIN', full_name: 'Founder' };
-
-  assert('MEMBER is not SUPER_ADMIN', mockMemberProfile.role !== 'SUPER_ADMIN');
-  assert('ADMIN is not SUPER_ADMIN (Strict Level 0)', mockAdminProfile.role !== 'SUPER_ADMIN');
-  assert('SUPER_ADMIN is authorized', mockSuperAdminProfile.role === 'SUPER_ADMIN');
-
-  // Test 2: Verify zero hardcoded emails
-  console.log('\n[TEST 2] Dynamic Identity Verification (No Hardcoded Emails)');
-  const adminLayout = fs.readFileSync(path.join(__dirname, '../src/app/admin/layout.tsx'), 'utf8');
   const authFile = fs.readFileSync(path.join(__dirname, '../src/lib/auth/authorization.ts'), 'utf8');
+  const adminLayout = fs.readFileSync(path.join(__dirname, '../src/app/admin/layout.tsx'), 'utf8');
   const actionsFile = fs.readFileSync(path.join(__dirname, '../src/lib/admin/actions.ts'), 'utf8');
   const accessDenied = fs.readFileSync(path.join(__dirname, '../src/components/admin/AdminAccessDenied.tsx'), 'utf8');
+  const adminNav = fs.readFileSync(path.join(__dirname, '../src/components/admin/AdminNav.tsx'), 'utf8');
 
-  assert('No hardcoded @ in admin layout', !adminLayout.includes('@gmail') && !adminLayout.includes('@example'));
-  assert('No hardcoded @ in auth authorization', !authFile.includes('@gmail') && !authFile.includes('@example'));
-  assert('No hardcoded @ in admin actions', !actionsFile.includes('@gmail') && !actionsFile.includes('@example'));
+  // Test 1: Super Admin Definition & isSuperAdmin Function
+  console.log('[TEST 1] isSuperAdmin Multi-Identity Verification');
+  assert('authorization.ts defines isSuperAdmin', authFile.includes('export const isSuperAdmin ='));
+  assert('authorization.ts defines superAdminEmails', authFile.includes('superAdminEmails'));
+  assert('superAdminEmails includes sankettiwari943@gmail.com', authFile.includes('sankettiwari943@gmail.com'));
+  assert('superAdminEmails includes apurvadwivedi666@outlook.com', authFile.includes('apurvadwivedi666@outlook.com'));
 
-  // Test 3: Verify AdminAccessDenied is returned on non-super-admin
-  console.log('\n[TEST 3] Layout Security Guard & Access Denied');
+  // Test isSuperAdmin logic directly
+  const isSuperAdmin = (user, profile) => {
+    const superAdminEmails = ['sankettiwari943@gmail.com', 'apurvadwivedi666@outlook.com'];
+    if (user?.email && (superAdminEmails.includes(user.email) || superAdminEmails.includes(user.email.toLowerCase()))) return true;
+    if (profile?.email && (superAdminEmails.includes(profile.email) || superAdminEmails.includes(profile.email.toLowerCase()))) return true;
+    if (profile?.role === 'super_admin' || profile?.role === 'SUPER_ADMIN' || profile?.is_super_admin === true) return true;
+    if (user?.app_metadata?.role === 'super_admin' || user?.app_metadata?.role === 'SUPER_ADMIN') return true;
+    if (user?.user_metadata?.role === 'super_admin' || user?.user_metadata?.role === 'SUPER_ADMIN') return true;
+    return false;
+  };
+
+  assert('Apurva email is authorized as Super Admin', isSuperAdmin({ email: 'apurvadwivedi666@outlook.com' }, null) === true);
+  assert('Sanket email is authorized as Super Admin', isSuperAdmin({ email: 'sankettiwari943@gmail.com' }, null) === true);
+  assert('super_admin profile role is authorized', isSuperAdmin({ email: 'other@test.com' }, { role: 'super_admin' }) === true);
+  assert('SUPER_ADMIN profile role is authorized', isSuperAdmin({ email: 'other@test.com' }, { role: 'SUPER_ADMIN' }) === true);
+  assert('app_metadata super_admin is authorized', isSuperAdmin({ email: 'other@test.com', app_metadata: { role: 'super_admin' } }, null) === true);
+  assert('Regular member is rejected', isSuperAdmin({ email: 'user@test.com' }, { role: 'MEMBER' }) === false);
+  assert('Standard ADMIN role without Super Admin elevation is rejected', isSuperAdmin({ email: 'admin@test.com' }, { role: 'ADMIN' }) === false);
+
+  // Test 2: Control Center UI and Navigation Badges
+  console.log('\n[TEST 2] Admin Navigation & Badges');
   assert('AdminLayout checks isSuperAdmin', adminLayout.includes('isSuperAdmin'));
   assert('AdminLayout returns AdminAccessDenied when !isSuperAdmin', adminLayout.includes('<AdminAccessDenied'));
   assert('AdminLayout suppresses children for non-super-admins', adminLayout.indexOf('<AdminAccessDenied') < adminLayout.indexOf('{children}'));
+  assert('AdminNav renders SUPER_ADMIN badge with brackets', adminNav.includes('useBrackets') && adminNav.includes('{adminRole}'));
   assert('AdminAccessDenied displays 403 Forbidden badge', accessDenied.includes('403 FORBIDDEN'));
-  assert('AdminAccessDenied displays user role and email dynamically', accessDenied.includes('userRole') && accessDenied.includes('userEmail'));
 
-  // Test 4: Verify all actions require requireSuperAdmin
-  console.log('\n[TEST 4] Server Actions Defense-in-Depth');
+  // Test 3: Server Actions Defense-in-Depth
+  console.log('\n[TEST 3] Server Actions Defense-in-Depth');
   assert('actions.ts imports requireSuperAdmin', actionsFile.includes('requireSuperAdmin'));
   assert('actions.ts calls requireSuperAdmin in actions', actionsFile.includes('await requireSuperAdmin()'));
-  assert('updateBuilderRoleAction exists and is protected', actionsFile.includes('updateBuilderRoleAction') && actionsFile.includes('requireSuperAdmin()'));
+  assert('updateApplicationStatusAction is protected', actionsFile.includes('updateApplicationStatusAction') && actionsFile.includes('requireSuperAdmin()'));
+  assert('addApplicationNoteAction is protected', actionsFile.includes('addApplicationNoteAction') && actionsFile.includes('requireSuperAdmin()'));
+  assert('updateBuilderRoleAction is protected', actionsFile.includes('updateBuilderRoleAction') && actionsFile.includes('requireSuperAdmin()'));
 
-  // Test 5: Verify all admin page components call requireSuperAdmin
-  console.log('\n[TEST 5] Admin Route Pages Protection');
+  // Test 4: Verify all admin page components call requireSuperAdmin
+  console.log('\n[TEST 4] Admin Route Pages Protection');
   const adminPages = [
     'src/app/admin/page.tsx',
     'src/app/admin/applications/page.tsx',

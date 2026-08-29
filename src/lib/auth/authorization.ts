@@ -195,6 +195,27 @@ export async function requireProfile(options?: { allowIncompleteOnboarding?: boo
   return profile;
 }
 
+export const superAdminEmails = [
+  'sankettiwari943@gmail.com',
+  'apurvadwivedi666@outlook.com',
+];
+
+/**
+ * Super Admin check:
+ * Grants full clearance to designated super admin emails, super_admin profile roles, and app metadata roles.
+ */
+export const isSuperAdmin = (user: any, profile: any): boolean => {
+  const superAdminEmails = ['sankettiwari943@gmail.com', 'apurvadwivedi666@outlook.com'];
+
+  if (user?.email && (superAdminEmails.includes(user.email) || superAdminEmails.includes(user.email.toLowerCase()))) return true;
+  if (profile?.email && (superAdminEmails.includes(profile.email) || superAdminEmails.includes(profile.email.toLowerCase()))) return true;
+  if (profile?.role === 'super_admin' || profile?.role === 'SUPER_ADMIN' || profile?.is_super_admin === true) return true;
+  if (user?.app_metadata?.role === 'super_admin' || user?.app_metadata?.role === 'SUPER_ADMIN') return true;
+  if (user?.user_metadata?.role === 'super_admin' || user?.user_metadata?.role === 'SUPER_ADMIN') return true;
+
+  return false;
+};
+
 /**
  * Check if current user is an authenticated Super Admin without redirecting.
  * Used by AdminLayout and protective boundaries to determine whether to render
@@ -211,10 +232,10 @@ export async function getSuperAdminAuth(): Promise<{
   }
 
   const profile = await getProfile(user.id);
-  const isSuperAdmin = Boolean(profile && profile.role === 'SUPER_ADMIN');
+  const authorized = isSuperAdmin(user, profile);
 
   return {
-    isSuperAdmin,
+    isSuperAdmin: authorized,
     user,
     profile,
   };
@@ -238,10 +259,23 @@ export async function requireSuperAdmin(): Promise<Profile> {
   }
 
   const profile = await getProfile(user.id);
-  if (!profile || profile.role !== 'SUPER_ADMIN') {
+  if (!isSuperAdmin(user, profile)) {
     throw new Error('Unauthorized: SUPER_ADMIN role clearance required.');
   }
 
-  return profile;
+  return (profile || {
+    id: user.id,
+    full_name:
+      user.user_metadata?.full_name ||
+      (user.email?.toLowerCase().includes('apurva')
+        ? 'Apurva Diwedi'
+        : user.email?.toLowerCase().includes('sanket')
+        ? 'Sanket Tiwari'
+        : 'Super Admin'),
+    username: user.email?.split('@')[0] || 'admin',
+    email: user.email,
+    role: 'SUPER_ADMIN' as UserRole,
+  }) as Profile;
 }
+
 

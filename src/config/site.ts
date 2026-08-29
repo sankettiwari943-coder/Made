@@ -34,6 +34,25 @@ export interface FounderConfig {
   }[];
 }
 
+export interface TeamMemberConfig {
+  name: string;
+  title: string;
+  subtitle: string;
+  role: string;
+  roleIndicator: string;
+  discipline: string;
+  tagline?: string;
+  intro?: string;
+  biography?: string[];
+  image: string;
+  technicalFocus: string[];
+  socials: {
+    github?: string;
+    linkedin?: string;
+    portfolio?: string;
+  };
+}
+
 export interface LinguisticSystem {
   heroTagline: string;
   projectsHeading: string;
@@ -56,6 +75,7 @@ export interface SiteConfig {
     linkedin: string;
   };
   founder: FounderConfig;
+  team: TeamMemberConfig[];
   navItems: NavItem[];
   authNavItems: {
     signIn: NavItem;
@@ -137,6 +157,59 @@ export const siteConfig: SiteConfig = {
       },
     ],
   },
+
+  team: [
+    {
+      name: "Sanket Tiwari",
+      title: "FOUNDER & PRESIDENT",
+      subtitle: "MADE",
+      role: "Founder & President — MADE",
+      roleIndicator: "[ FOUNDER & PRESIDENT // ARCHITECTURE ]",
+      discipline: "Architecture",
+      tagline: "Talented students shouldn't need to wait for permission to start building.",
+      intro: "I started MADE around a simple idea: talented students shouldn't need to wait for permission to start building.",
+      technicalFocus: [
+        "AI & Deep Learning",
+        "Distributed Systems",
+        "Full-Stack Web Architecture",
+      ],
+      biography: [
+        "I started MADE around a simple idea: talented students shouldn't need to wait for permission to start building.",
+        "Traditional university structures are exceptional for foundational theory, but modern technology moves at the speed of individual initiative and collective craft. MADE exists to bridge the chasm between classroom theory and shipping production-grade systems.",
+        "Our mission is to cultivate an environment where ambitious builders find each other, collaborate on high-stakes ideas, and launch things that matter into the real world.",
+      ],
+      image: "/images/founder/sanket-tiwari.jpg",
+      socials: {
+        github: "https://github.com/sankettiwari943-coder",
+        linkedin: "https://www.linkedin.com/in/sanket-tiwari2006/",
+        portfolio: "https://portfolio-psi-one-71.vercel.app/",
+      },
+    },
+    {
+      name: "Apurva Diwedi",
+      title: "VICE PRESIDENT",
+      subtitle: "ENGINEERING",
+      role: "Vice President (Engineering)",
+      roleIndicator: "[ VICE PRESIDENT // ENGINEERING ]",
+      discipline: "Engineering",
+      tagline: "Engineering excellence is built on rigorous execution, rapid iteration, and open collaboration.",
+      intro: "Leading technical architecture and engineering execution across student-built systems at MADE.",
+      technicalFocus: [
+        "Engineering Management",
+        "Systems Architecture",
+        "Full-Stack Systems",
+      ],
+      biography: [
+        "Driving technical initiatives and engineering acceleration across the MADE ecosystem.",
+        "Passionate about scaling high-agency student developer teams, fostering open-source innovation, and transforming complex technical concepts into resilient production systems.",
+      ],
+      image: "/team/apurva-diwedi.jpg",
+      socials: {
+        github: "https://github.com/ApurD2007",
+        linkedin: "https://www.linkedin.com/in/apurva-diwedi-a76497384/",
+      },
+    },
+  ],
 
   navItems: [
     { label: "Projects", href: "/projects" },

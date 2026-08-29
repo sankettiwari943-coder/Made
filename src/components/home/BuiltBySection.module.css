@@ -10,48 +10,118 @@
   }
 }
 
-.innerGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-10);
-  align-items: center;
+.headerRow {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-12);
 }
 
-@media (min-width: 900px) {
-  .innerGrid {
-    grid-template-columns: 340px 1fr;
-    gap: var(--space-16);
+.labelWrapper {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.technicalIndex {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--accent-primary);
+  letter-spacing: 0.12em;
+}
+
+.labelDivider {
+  color: var(--border-regular);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.categoryLabel {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.sectionTitle {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4.5vw, 3.25rem);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  line-height: 1;
+  margin: 0;
+}
+
+.sectionDescription {
+  font-size: 0.9375rem;
+  color: var(--text-secondary);
+  max-width: 600px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.teamGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-8);
+}
+
+@media (min-width: 840px) {
+  .teamGrid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-8);
   }
+}
+
+.memberCard {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-technical);
+  border-radius: var(--radius-xs);
+  overflow: hidden;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
+}
+
+.memberCard:hover {
+  border-color: var(--border-strong);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
 }
 
 .portraitContainer {
   position: relative;
   width: 100%;
-  aspect-ratio: 4 / 5;
-  border: 1px solid var(--border-technical);
-  background-color: var(--bg-surface);
+  aspect-ratio: 4 / 4.5;
+  background-color: var(--bg-surface-elevated);
   overflow: hidden;
+  border-bottom: 1px solid var(--border-technical);
 }
 
 .portraitImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: top center;
   filter: grayscale(100%) contrast(1.1);
-  transition: filter var(--transition-normal);
+  transition: filter 0.45s cubic-bezier(0.16, 1, 0.3, 1), transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.portraitImage:hover {
-  filter: grayscale(60%) contrast(1.15);
+.memberCard:hover .portraitImage {
+  filter: grayscale(0%) contrast(1.05);
+  transform: scale(1.03);
 }
 
 .portraitTag {
   position: absolute;
   bottom: var(--space-3);
   left: var(--space-3);
-  background-color: rgba(12, 12, 14, 0.9);
+  background-color: rgba(12, 12, 14, 0.92);
   backdrop-filter: blur(8px);
-  padding: 3px 8px;
+  padding: 3px 9px;
   border: 1px solid var(--border-technical);
   font-family: var(--font-mono);
   font-size: 0.625rem;
@@ -60,64 +130,115 @@
   text-transform: uppercase;
 }
 
-.contentCol {
+.cardBody {
   display: flex;
   flex-direction: column;
-  gap: var(--space-6);
+  flex: 1;
+  padding: var(--space-6);
+  gap: var(--space-4);
 }
 
-.founderHeading {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-}
-
-.founderName {
-  font-family: var(--font-display);
-  font-size: clamp(2rem, 4.5vw, 3.25rem);
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  text-transform: uppercase;
-  color: var(--text-primary);
-  line-height: 1;
-}
-
-.founderRole {
-  font-family: var(--font-mono);
-  font-size: 0.8125rem;
-  font-weight: 700;
-  color: var(--accent-primary);
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-}
-
-.founderOrg {
+.roleIndicator {
   font-family: var(--font-mono);
   font-size: 0.75rem;
-  color: var(--text-muted);
-  letter-spacing: 0.1em;
+  font-weight: 700;
+  color: var(--accent-primary);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
-.introQuote {
-  font-family: var(--font-serif);
-  font-size: clamp(1.25rem, 2.5vw, 1.65rem);
-  font-weight: 400;
-  line-height: 1.4;
+.memberName {
+  font-family: var(--font-display);
+  font-size: clamp(1.5rem, 2.5vw, 1.875rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  text-transform: uppercase;
   color: var(--text-primary);
+  line-height: 1.1;
+  margin: var(--space-1) 0 0;
 }
 
-.introQuote em {
+.disciplineBadge {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  color: var(--text-muted);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.memberQuote {
+  font-family: var(--font-serif);
+  font-size: 1.0625rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text-primary);
+  border-left: 2px solid var(--accent-primary);
+  padding-left: var(--space-3);
+  margin: 0;
+}
+
+.memberQuote em {
   font-style: italic;
   color: var(--accent-primary-hover);
 }
 
-.shortIntro {
-  font-size: 0.9375rem;
-  line-height: 1.7;
+.memberBio {
+  font-size: 0.875rem;
+  line-height: 1.6;
   color: var(--text-secondary);
-  max-width: 600px;
+  margin: 0;
 }
 
-.actionRow {
+.focusChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: auto;
+}
+
+.focusChip {
+  font-family: var(--font-mono);
+  font-size: 0.6875rem;
+  padding: 3px 8px;
+  background-color: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+}
+
+.cardFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4);
   margin-top: var(--space-2);
+}
+
+.socialRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.socialLink {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  transition: color var(--transition-fast);
+}
+
+.socialLink:hover {
+  color: var(--accent-primary-hover);
+}
+
+.footerAction {
+  margin-top: var(--space-12);
+  display: flex;
+  justify-content: center;
 }
