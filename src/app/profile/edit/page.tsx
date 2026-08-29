@@ -52,8 +52,10 @@ export default function ProfileEditPage() {
   const [interests, setInterests] = useState<string[]>([]);
   const [interestInput, setInterestInput] = useState('');
 
-  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [currentAvatarUrl, setCurrentAvatarUrl] = useState<string | null>(null);
 
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
@@ -96,7 +98,10 @@ export default function ProfileEditPage() {
         if (profile.github_url) setGithubUrl(profile.github_url);
         if (profile.linkedin_url) setLinkedinUrl(profile.linkedin_url);
         if (profile.portfolio_url) setPortfolioUrl(profile.portfolio_url);
-        if (profile.avatar_url) setAvatarPreview(profile.avatar_url);
+        if (profile.avatar_url) {
+          setPreviewUrl(profile.avatar_url);
+          setCurrentAvatarUrl(profile.avatar_url);
+        }
       }
 
       // Fetch Skills
@@ -137,7 +142,7 @@ export default function ProfileEditPage() {
     );
   }
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -152,7 +157,13 @@ export default function ProfileEditPage() {
     }
 
     setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
+    // Show instant local preview while typing
+    setPreviewUrl(URL.createObjectURL(file));
+    setErrors((prev) => {
+      const next = { ...prev };
+      delete next.avatar;
+      return next;
+    });
   };
 
   const addSkill = (skill: string) => {
@@ -215,22 +226,33 @@ export default function ProfileEditPage() {
     const supabase = createClient();
 
     try {
-      let finalAvatarUrl = avatarPreview;
+      let finalAvatarUrl = currentAvatarUrl;
 
-      // 1. Upload Avatar if changed
+      // 1. Upload to Supabase 'avatars' bucket if changed
       if (avatarFile && userId) {
+        setUploading(true);
         const fileExt = avatarFile.name.split('.').pop() || 'png';
-        const filePath = `${userId}-${Date.now()}.${fileExt}`;
+        const fileName = `${userId}-${Date.now()}.${fileExt}`;
+        const filePath = `user-avatars/${fileName}`;
+
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(filePath, avatarFile, { upsert: true });
 
-        if (!uploadError) {
-          const { data: publicUrlData } = supabase.storage
-            .from('avatars')
-            .getPublicUrl(filePath);
-          finalAvatarUrl = publicUrlData.publicUrl;
+        if (uploadError) {
+          console.error('Avatar upload error:', uploadError);
+          setErrorMessage(uploadError.message || 'Failed to upload profile photo.');
+          setSaveStatus('error');
+          setUploading(false);
+          return;
         }
+
+        // 2. Get Public URL
+        const { data: { publicUrl } } = supabase.storage
+          .from('avatars')
+          .getPublicUrl(filePath);
+
+        finalAvatarUrl = publicUrl;
       }
 
       // 2. Check Username uniqueness if changed
@@ -245,24 +267,25 @@ export default function ProfileEditPage() {
         if (existingUser) {
           setErrors({ username: 'This username is already taken.' });
           setSaveStatus('error');
+          setUploading(false);
           return;
         }
       }
 
-      // 3. Update Profile
+      // 3. Update Profile table with the real public URL
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
           full_name: payload.fullName,
           username: payload.username,
-          bio: payload.bio || null,
+          avatar_url: finalAvatarUrl,
           primary_focus: payload.primaryFocus,
+          bio: payload.bio || null,
           location: payload.location || null,
           current_build: payload.currentBuild || null,
           github_url: payload.githubUrl || null,
           linkedin_url: payload.linkedinUrl || null,
           portfolio_url: payload.portfolioUrl || null,
-          avatar_url: finalAvatarUrl,
           updated_at: new Date().toISOString(),
         })
         .eq('id', userId || '');
@@ -270,6 +293,7 @@ export default function ProfileEditPage() {
       if (profileError) {
         setErrorMessage(profileError.message);
         setSaveStatus('error');
+        setUploading(false);
         return;
       }
 
@@ -403,34 +427,55 @@ export default function ProfileEditPage() {
                 PROFILE PHOTO
               </label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                {avatarPreview && (
-                  <div
-                    style={{
-                      width: '64px',
-                      height: '64px',
-                      borderRadius: 'var(--radius-xs)',
-                      border: '1px solid var(--border-technical)',
-                      overflow: 'hidden',
-                      backgroundColor: 'var(--bg-canvas)',
-                    }}
-                  >
+                <div
+                  className="w-16 h-16 rounded border border-zinc-800 bg-zinc-900 flex items-center justify-center overflow-hidden shrink-0"
+                  style={{
+                    width: '64px',
+                    height: '64px',
+                    borderRadius: 'var(--radius-xs)',
+                    border: '1px solid var(--border-technical)',
+                    backgroundColor: 'var(--bg-canvas)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    overflow: 'hidden',
+                    flexShrink: 0,
+                  }}
+                >
+                  {previewUrl ? (
                     <img
-                      src={avatarPreview}
+                      src={previewUrl}
                       alt="Avatar Preview"
+                      onError={() => setPreviewUrl(null)}
+                      className="w-full h-full object-cover"
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
-                  </div>
-                )}
-                <input
-                  type="file"
-                  accept="image/png, image/jpeg, image/webp, image/gif"
-                  onChange={handleAvatarChange}
-                  style={{
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: '0.75rem',
-                    color: 'var(--text-muted)',
-                  }}
-                />
+                  ) : (
+                    <span
+                      className="text-xs font-mono text-zinc-500"
+                      style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-dim)' }}
+                    >
+                      No Image
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <input
+                    type="file"
+                    accept="image/png, image/jpeg, image/webp, image/gif"
+                    onChange={handleFileChange}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      fontSize: '0.75rem',
+                      color: 'var(--text-muted)',
+                    }}
+                  />
+                  {errors.avatar && (
+                    <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.6875rem', color: 'var(--color-danger)', marginTop: '4px', display: 'block' }}>
+                      {errors.avatar}
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
@@ -642,8 +687,8 @@ export default function ProfileEditPage() {
             </div>
 
             <div style={{ marginTop: 'var(--space-4)', display: 'flex', gap: 'var(--space-4)' }}>
-              <Button variant="primary" size="lg" disabled={saveStatus === 'saving'}>
-                {saveStatus === 'saving' ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
+              <Button variant="primary" size="lg" disabled={saveStatus === 'saving' || uploading}>
+                {saveStatus === 'saving' || uploading ? 'SAVING CHANGES...' : 'SAVE CHANGES'}
               </Button>
             </div>
           </form>

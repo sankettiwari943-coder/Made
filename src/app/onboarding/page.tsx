@@ -251,16 +251,19 @@ export default function OnboardingPage() {
       // 1. Upload Avatar if selected
       if (avatarFile && userId) {
         const fileExt = avatarFile.name.split('.').pop() || 'png';
-        const filePath = `${userId}-${Date.now()}.${fileExt}`;
+        const fileName = `${userId}-${Date.now()}.${fileExt}`;
+        const filePath = `user-avatars/${fileName}`;
         const { error: uploadError } = await supabase.storage
           .from('avatars')
           .upload(filePath, avatarFile, { upsert: true });
 
         if (!uploadError) {
-          const { data: publicUrlData } = supabase.storage
+          const { data: { publicUrl } } = supabase.storage
             .from('avatars')
             .getPublicUrl(filePath);
-          finalAvatarUrl = publicUrlData.publicUrl;
+          finalAvatarUrl = publicUrl;
+        } else {
+          console.error('Avatar upload error:', uploadError);
         }
       }
 
@@ -423,24 +426,38 @@ export default function OnboardingPage() {
                   Profile Photo (Optional)
                 </label>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
-                  {avatarPreview && (
-                    <div
-                      style={{
-                        width: '56px',
-                        height: '56px',
-                        borderRadius: 'var(--radius-xs)',
-                        border: '1px solid var(--border-technical)',
-                        overflow: 'hidden',
-                        backgroundColor: 'var(--bg-canvas)',
-                      }}
-                    >
+                  <div
+                    className="w-16 h-16 rounded border border-zinc-800 bg-zinc-900 flex items-center justify-center overflow-hidden shrink-0"
+                    style={{
+                      width: '64px',
+                      height: '64px',
+                      borderRadius: 'var(--radius-xs)',
+                      border: '1px solid var(--border-technical)',
+                      backgroundColor: 'var(--bg-canvas)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      overflow: 'hidden',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {avatarPreview ? (
                       <img
                         src={avatarPreview}
                         alt="Avatar Preview"
+                        onError={() => setAvatarPreview(null)}
+                        className="w-full h-full object-cover"
                         style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <span
+                        className="text-xs font-mono text-zinc-500"
+                        style={{ fontFamily: 'var(--font-mono)', fontSize: '0.75rem', color: 'var(--text-dim)' }}
+                      >
+                        No Image
+                      </span>
+                    )}
+                  </div>
                   <input
                     type="file"
                     accept="image/png, image/jpeg, image/webp, image/gif"
