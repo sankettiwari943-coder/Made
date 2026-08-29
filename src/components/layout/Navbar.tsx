@@ -20,7 +20,6 @@ import { createClient } from '@/lib/supabase/client';
 import { Logo } from '../brand/Logo';
 import { Container } from './Container';
 import { Button } from '../ui/Button';
-import { Badge } from '../ui/Badge';
 import styles from './Navbar.module.css';
 
 export const Navbar: React.FC = () => {
@@ -129,7 +128,15 @@ export const Navbar: React.FC = () => {
     profile?.username ||
     (user?.email ? user.email.split('@')[0].toLowerCase().replace(/[^a-z0-9_]/g, '_') : 'builder');
 
-  const userRole = role || 'MEMBER';
+  const roleLower = profile?.role?.toString().toLowerCase();
+  const displayRole =
+    user?.email === 'sankettiwari943@gmail.com' || profile?.role === 'super_admin' || roleLower === 'super_admin'
+      ? 'SUPER_ADMIN'
+      : profile?.role === 'admin' || roleLower === 'admin'
+      ? 'ADMIN'
+      : profile?.role === 'builder' || roleLower === 'builder' || roleLower === 'member'
+      ? 'BUILDER'
+      : 'USER';
 
   return (
     <header className={styles.navbarWrapper}>
@@ -259,12 +266,9 @@ export const Navbar: React.FC = () => {
                           </div>
                         </div>
                         <div className={styles.dropdownRoleRow}>
-                          <Badge
-                            variant={userRole === 'SUPER_ADMIN' || userRole === 'ADMIN' ? 'accent' : 'default'}
-                            useBrackets
-                          >
-                            {userRole}
-                          </Badge>
+                          <span className="text-[10px] font-mono px-2 py-0.5 border border-blue-500/30 text-blue-400 bg-blue-500/10 rounded">
+                            [ {displayRole} ]
+                          </span>
                         </div>
                       </div>
 
@@ -425,9 +429,9 @@ export const Navbar: React.FC = () => {
                     <div className={styles.mobileUserName}>{displayName}</div>
                     <div className={styles.mobileUserHandle}>@{username}</div>
                   </div>
-                  <Badge variant={isAdmin ? 'accent' : 'default'} useBrackets>
-                    {userRole}
-                  </Badge>
+                  <span className="text-[10px] font-mono px-2 py-0.5 border border-blue-500/30 text-blue-400 bg-blue-500/10 rounded">
+                    [ {displayRole} ]
+                  </span>
                 </div>
 
                 <div className={styles.mobileUserLinks}>
