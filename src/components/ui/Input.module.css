@@ -40,6 +40,11 @@
   transition: border-color var(--transition-fast), background-color var(--transition-fast);
 }
 
+.input::-ms-reveal,
+.input::-ms-clear {
+  display: none;
+}
+
 .passwordInput {
   padding-right: 2.75rem !important;
 }
@@ -49,9 +54,10 @@
   right: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
+  z-index: 20;
   background: transparent;
   border: none;
-  color: var(--text-muted);
+  color: #3f3f46;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -62,13 +68,38 @@
   line-height: 1;
 }
 
+:root[data-theme='dark'] .passwordToggle,
+[data-theme='dark'] .passwordToggle,
+:root:not([data-theme='light']) .passwordToggle {
+  color: #a1a1aa;
+}
+
 .passwordToggle:hover {
-  color: var(--text-primary);
+  color: #000000;
+}
+
+:root[data-theme='dark'] .passwordToggle:hover,
+[data-theme='dark'] .passwordToggle:hover,
+:root:not([data-theme='light']) .passwordToggle:hover {
+  color: #ffffff;
 }
 
 .passwordToggle:focus {
   outline: none;
-  color: var(--text-primary);
+  color: #000000;
+}
+
+:root[data-theme='dark'] .passwordToggle:focus,
+[data-theme='dark'] .passwordToggle:focus,
+:root:not([data-theme='light']) .passwordToggle:focus {
+  color: #ffffff;
+}
+
+.passwordToggle svg {
+  width: 1rem;
+  height: 1rem;
+  stroke-width: 2;
+  display: block;
 }
 
 .input:focus {

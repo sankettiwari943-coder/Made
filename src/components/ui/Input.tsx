@@ -66,12 +66,15 @@ export const Input = React.forwardRef<HTMLInputElement, InputProps>(
               onClick={() => setShowPassword((prev) => !prev)}
               tabIndex={-1}
               aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className={styles.passwordToggle}
+              className={clsx(
+                styles.passwordToggle,
+                'absolute right-3 top-1/2 -translate-y-1/2 z-20 text-zinc-700 hover:text-black dark:text-zinc-400 dark:hover:text-white p-1 transition-colors flex items-center justify-center'
+              )}
             >
               {showPassword ? (
-                <EyeOff className="w-4 h-4" size={16} strokeWidth={2} aria-hidden="true" />
+                <EyeOff className="w-4 h-4 stroke-[2]" size={16} strokeWidth={2} aria-hidden="true" />
               ) : (
-                <Eye className="w-4 h-4" size={16} strokeWidth={2} aria-hidden="true" />
+                <Eye className="w-4 h-4 stroke-[2]" size={16} strokeWidth={2} aria-hidden="true" />
               )}
             </button>
           )}

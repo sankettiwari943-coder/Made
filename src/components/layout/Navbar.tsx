@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { siteConfig } from '@/config/site';
 import { useAuth } from '@/context/AuthContext';
+import { createClient } from '@/lib/supabase/client';
 import { Logo } from '../brand/Logo';
 import { Container } from './Container';
 import { Button } from '../ui/Button';
@@ -29,6 +30,9 @@ export const Navbar: React.FC = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  const supabase = createClient();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
 
@@ -36,6 +40,25 @@ export const Navbar: React.FC = () => {
   const closeMobile = () => setMobileOpen(false);
   const toggleUserDropdown = () => setUserDropdownOpen((prev) => !prev);
   const closeUserDropdown = () => setUserDropdownOpen(false);
+
+  const getAvatarUrl = (url?: string | null) => {
+    if (!url) return null;
+    if (url.startsWith('http://') || url.startsWith('https://')) return url;
+    const { data } = supabase.storage.from('avatars').getPublicUrl(url);
+    return data?.publicUrl || null;
+  };
+
+  const rawAvatarUrl =
+    profile?.avatar_url ||
+    (profile as { profile_image_url?: string | null })?.profile_image_url ||
+    user?.user_metadata?.avatar_url;
+
+  const resolvedAvatar = getAvatarUrl(rawAvatarUrl);
+
+  // Reset imgError when avatar URL changes
+  useEffect(() => {
+    setImgError(false);
+  }, [rawAvatarUrl]);
 
   // Close menus on route change
   useEffect(() => {
@@ -187,14 +210,17 @@ export const Navbar: React.FC = () => {
                     aria-label="User account menu"
                   >
                     <div className={styles.avatarBox}>
-                      {profile?.avatar_url ? (
+                      {!imgError && resolvedAvatar ? (
                         <img
-                          src={profile.avatar_url}
-                          alt={displayName}
-                          className={styles.avatarImg}
+                          src={resolvedAvatar}
+                          alt={profile?.full_name || "Profile"}
+                          onError={() => setImgError(true)}
+                          className={clsx(styles.avatarImg, "w-7 h-7 rounded object-cover border border-zinc-700 shrink-0")}
                         />
                       ) : (
-                        <span className={styles.avatarInitials}>{getInitials()}</span>
+                        <div className={clsx(styles.avatarFallback, "w-7 h-7 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-mono font-medium text-zinc-300 shrink-0")}>
+                          {(profile?.full_name || user?.email || 'U').slice(0, 2).toUpperCase()}
+                        </div>
                       )}
                     </div>
                     <span className={styles.userTriggerName}>{displayName}</span>
@@ -214,14 +240,17 @@ export const Navbar: React.FC = () => {
                       <div className={styles.dropdownHeader}>
                         <div className={styles.dropdownIdentity}>
                           <div className={styles.dropdownAvatarBox}>
-                            {profile?.avatar_url ? (
+                            {!imgError && resolvedAvatar ? (
                               <img
-                                src={profile.avatar_url}
-                                alt={displayName}
-                                className={styles.avatarImg}
+                                src={resolvedAvatar}
+                                alt={profile?.full_name || "Profile"}
+                                onError={() => setImgError(true)}
+                                className={clsx(styles.avatarImg, "w-9 h-9 rounded object-cover border border-zinc-700 shrink-0")}
                               />
                             ) : (
-                              <span className={styles.avatarInitials}>{getInitials()}</span>
+                              <div className={clsx(styles.avatarFallback, "w-9 h-9 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-mono font-medium text-zinc-300 shrink-0")}>
+                                {(profile?.full_name || user?.email || 'U').slice(0, 2).toUpperCase()}
+                              </div>
                             )}
                           </div>
                           <div className={styles.dropdownUserMeta}>
@@ -379,14 +408,17 @@ export const Navbar: React.FC = () => {
               <div className={styles.mobileUserCard}>
                 <div className={styles.mobileUserHeader}>
                   <div className={styles.avatarBox}>
-                    {profile?.avatar_url ? (
+                    {!imgError && resolvedAvatar ? (
                       <img
-                        src={profile.avatar_url}
-                        alt={displayName}
-                        className={styles.avatarImg}
+                        src={resolvedAvatar}
+                        alt={profile?.full_name || "Profile"}
+                        onError={() => setImgError(true)}
+                        className={clsx(styles.avatarImg, "w-7 h-7 rounded object-cover border border-zinc-700 shrink-0")}
                       />
                     ) : (
-                      <span className={styles.avatarInitials}>{getInitials()}</span>
+                      <div className={clsx(styles.avatarFallback, "w-7 h-7 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center text-xs font-mono font-medium text-zinc-300 shrink-0")}>
+                        {(profile?.full_name || user?.email || 'U').slice(0, 2).toUpperCase()}
+                      </div>
                     )}
                   </div>
                   <div>
