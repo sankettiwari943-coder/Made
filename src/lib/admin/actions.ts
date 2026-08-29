@@ -718,7 +718,10 @@ export async function updateBuilderRoleAction(
   const serviceClient = createServiceClient();
   const supabase = createClient();
 
-  const normalizedRole = (newRole || '').toUpperCase() as UserRole;
+  let normalizedRole = (newRole || '').toUpperCase() as UserRole;
+  if ((normalizedRole as string) === 'USER' || (normalizedRole as string) === 'BUILDER') {
+    normalizedRole = 'MEMBER';
+  }
 
   // 1. Attempt RPC call if available
   try {

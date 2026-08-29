@@ -37,8 +37,13 @@ BEGIN
     END IF;
 
     normalized_role := UPPER(new_role);
-    IF normalized_role NOT IN ('MEMBER', 'ADMIN', 'SUPER_ADMIN') THEN
+    IF normalized_role NOT IN ('MEMBER', 'ADMIN', 'SUPER_ADMIN', 'USER', 'BUILDER') THEN
         RAISE EXCEPTION 'Invalid role specified: %', new_role;
+    END IF;
+
+    -- Map USER/BUILDER to MEMBER for database user_role enum compatibility
+    IF normalized_role IN ('USER', 'BUILDER') THEN
+        normalized_role := 'MEMBER';
     END IF;
 
     SELECT full_name INTO target_name FROM public.profiles WHERE id = target_user_id;

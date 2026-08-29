@@ -65,8 +65,8 @@ async function runTests() {
   assert('BuilderRoleSelect checks isSuperAdmin prop', builderRoleSelect.includes('isSuperAdmin'));
   assert('BuilderRoleSelect renders read-only Badge when !isSuperAdmin', builderRoleSelect.includes('!isSuperAdmin') && builderRoleSelect.includes('<Badge'));
   assert('BuilderRoleSelect calls update_user_role RPC', builderRoleSelect.includes('update_user_role'));
-  assert('BuilderRoleSelect contains Transfer Warning Modal', builderRoleSelect.includes('showTransferModal'));
-  assert('Transfer Modal contains single Super Admin warning copy', builderRoleSelect.includes('There can only be one Super Admin at a time'));
+  assert('BuilderRoleSelect contains Transfer confirmation dialog', builderRoleSelect.includes('confirmTransfer') || builderRoleSelect.includes('There can only be one Super Admin'));
+  assert('Transfer confirmation contains single Super Admin warning copy', builderRoleSelect.includes('There can only be one Super Admin. Transferring this will demote you to Admin. Proceed?'));
 
   // Test 3: SQL Migration RPC Function
   console.log('\n[TEST 3] update_user_role SQL RPC Migration');

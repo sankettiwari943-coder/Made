@@ -1,4 +1,11 @@
-export type UserRole = 'MEMBER' | 'ADMIN' | 'SUPER_ADMIN';
+export type UserRole =
+  | 'MEMBER'
+  | 'ADMIN'
+  | 'SUPER_ADMIN'
+  | 'user'
+  | 'builder'
+  | 'admin'
+  | 'super_admin';
 
 export type ProjectStatus = 'IDEA' | 'BUILDING' | 'PROTOTYPE' | 'LIVE' | 'OPEN_SOURCE' | 'ARCHIVED';
 export type ProjectMemberRole = 'OWNER' | 'COLLABORATOR';
